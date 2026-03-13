@@ -1,0 +1,25 @@
+# Web Framework
+fastapi==0.135.1
+uvicorn[standard]
+python-multipart
+
+# LangGraph & LangChain — PostgreSQL checkpointer replaces Redis
+langgraph
+langchain-openai
+langchain-core
+langchain-google-genai
+
+# Search
+tavily-python
+
+# PDF Parsing
+pdfplumber
+python-docx
+
+# Utils
+pydantic==2.12.5
+pydantic-settings
+python-dotenv
+httpx
+tenacity
+structlog
