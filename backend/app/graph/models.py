@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from typing import Literal, Optional
 import logging
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 # Shared sub-models
 
@@ -32,8 +32,8 @@ class Resource(BaseModel):
 
     @field_validator("url")
     @classmethod
-    def url_must_start_http(cls, v):
-        if v and not v.startswith("http"):
+    def url_must_start_https(cls, v):
+        if v and not v.startswith("https"):
             return ""
         return v
 
@@ -78,38 +78,201 @@ class Node2bOutput(BaseModel):
     skill_gaps:      list[SkillGap] = []
     gap_summary:     str = ""
 
+# Node 3 output model
+
+class MarketSkillGap(BaseModel):
+    skill:        str
+    importance:   Literal["critical", "important", "nice-to-have"] = "important"
+    reason:       str = ""
+    demand_score: float = 0.0
+
+class Node3Output(BaseModel):
+    updated_skill_gaps: list[MarketSkillGap] = []
+    salary_range:       SalaryRange = Field(default_factory=SalaryRange)
+    market_insights:    list[str] = []
+    top_companies:      list[str] = []
+    market_trend:       str = ""
+
+# NodeRecommend output model
+
+class ReadyCareer(BaseModel):
+    title:             str
+    match_score:       int = 0
+    description:       str = ""
+    matched_skills:    list[str] = []
+    missing_minor:     list[str] = []
+    salary_range:      str = ""
+    why_good_fit:      str = ""
+    typical_companies: list[str] = []
+    time_to_ready:     str = "พร้อมเลย"
+
+class NearReachMissingSkill(BaseModel):
+    skill:      str
+    importance: Literal["critical", "important", "nice-to-have"] = "important"
+    learn_time: str = ""
+
+class NearReachCareer(BaseModel):
+    title:              str
+    current_coverage:   int = 0
+    missing_skills:     list[NearReachMissingSkill] = []
+    total_upskill_time: str = ""
+    salary_range:       str = ""
+    why_worth_it:       str = ""
+
+class RecommendFullOutput(BaseModel):
+    ready_careers:          list[ReadyCareer] = []
+    near_reach_careers:     list[NearReachCareer] = []
+    recommendation_summary: str = ""
+
+# Node Multi Career Gap Analysis output model
+
+class MultiGapCareer(BaseModel):
+    title:              str
+    difficulty:         Literal["easy", "medium", "hard"] = "medium"
+    current_coverage:   int = 0
+    match_score:        int = 0
+    description:        str = ""
+    salary_range:       str = ""
+    matched_skills:     list[str] = []
+    skill_gaps:         list[SkillGap] = []
+    total_upskill_time: str = ""
+    roadmap_summary:    list[str] = []
+    typical_companies:  list[str] = []
+    why_recommended:    str = ""
+
+class MultiGapOutput(BaseModel):
+    recommended_careers: list[MultiGapCareer] = []
+    easiest_path:        str = ""
+    highest_salary_path: str = ""
+    overall_advice:      str = ""
+
+# Node 4 output model
+
+class Milestone(BaseModel):
+    week:           str
+    title:          str
+    tasks:          list[str] = []
+    resources:      list[Resource] = []
+    success_metric: str = ""
+
+class Node4Output(BaseModel):
+    target_role:          str = ""
+    total_duration:       str = ""
+    milestones:           list[Milestone] = []
+    key_certifications:   list[str] = []
+    daily_commitment:     str = ""
+    motivational_message: str = ""
+
+    @field_validator("milestones")
+    @classmethod
+    def must_have_milestones(cls, v):
+        if not v:
+            raise ValueError("roadmap must have at least 1 milestone")
+        return v
+    
+# Node 5 output model
+
+class ValidationIssue(BaseModel):
+    section:  str
+    severity: Literal["critical", "warning"] = "warning"
+    field:    str = ""
+    issue:    str
+    fix:      str = ""
+
+class FixesApplied(BaseModel):
+    skills:     Optional[list] = None
+    careers:    Optional[list] = None
+    skill_gaps: Optional[list] = None
+    roadmap:    Optional[dict] = None
+
+class Node5Output(BaseModel):
+    is_valid:              bool = True
+    overall_quality_score: int = 0
+    issues:                list[ValidationIssue] = []
+    auto_fixable:          bool = False
+    fixes_applied:         FixesApplied = Field(default_factory=FixesApplied)
+    validation_summary:    str = ""
+
 # ── parse() — 3-stage fallback ────────────────────────────────────────────────
 
-def _coerce_list(val) -> list:
-    """ถ้า LLM return dict หรือ string แทน list → แปลงให้เป็น list"""
+def coerce_list(val) -> list:
     if isinstance(val, list): return val
     if isinstance(val, dict): return [val]
-    if isinstance(val, str):  return [val] if val else []
+    if isinstance(val, str):  
+        if val:
+            return [val]
+        else:
+            return []
+        
     return []
 
-def _repair(model: type[BaseModel], raw: dict) -> dict:
-    """
-    Pre-validate repair:
-    - list field ที่ได้มาเป็น dict/string → _coerce_list
-    - drop explicit None → Pydantic ใช้ default แทน
-    - drop extra keys ที่ไม่ได้ define ใน model
-    """
+def repair(model: type[BaseModel], raw: dict) -> dict:
+    # ป้องกัน error กรณีที่ข้อมูลดิบไม่ใช่ Dictionary
     if not isinstance(raw, dict):
         return {}
     
     repaired = {}
-    hints = model.model_fields
+    hints = model.model_fields # ดึงรายการฟิลด์ทั้งหมดที่ Model ต้องการ
 
     for key, val in raw.items():
+        # ถ้า key นี้ไม่มีใน Model ให้ข้าม
         if key not in hints:
             continue
 
+        # ดูว่าฟิลด์นี้ถูกกำหนด Type hint ไว้ว่าอะไร (เช่น list[str], int, str) 
         annotation = str(hints[key].annotation)
         
+        # ถ้าฟิลด์นี้ต้องการ List แต่ได้ข้อมูลแบบอื่นมา ให้แปลงเป็น List
         if "list" in annotation.lower() and not isinstance(val, list):
-            val = _coerce_list(val)
-        if val is None:
+            val = coerce_list(val)
+        if val is None: # ถ้าค่าว่างให้ข้าม
             continue
+        
         repaired[key] = val
 
     return repaired
+
+def parse(model: type[BaseModel], raw: dict) -> BaseModel:
+    # ตรวจสอบว่าข้อมูลดิบเป็น dict หรือไม่ ถ้าไม่ใช่ให้ log warning และใช้ค่า default ของ Model แทน
+    if not isinstance(raw, dict):
+        # logger.warning("[%s] LLM returned non-dict (%s) → using defaults", model.__name__, type(raw).__name__)
+        return model()
+
+    # Stage 1 — ส่งข้อมูลดิบให้มาตามโครงสร้าง Model
+    try:
+        return model.model_validate(raw)
+    except ValidationError:
+        pass
+
+    # Stage 2 — attempt repair (e.g. coerce list, drop unknown fields) and re-parse
+    try:
+        result = model.model_validate(repair(model, raw))
+        # logger.info("[%s] Stage 2 repair succeeded", model.__name__)
+
+        return result
+    except ValidationError:
+        pass
+
+    # Stage 3 — ตรวจสอบทีละ field field ไหนใช้ได้ให้เก็บไว้ field ไหนพังให้ตัดทิ้งไปใช้ default
+    salvaged_data = {}
+    invalid_fields = []
+
+    for field_name in model.model_fields:
+        # ถ้าในข้อมูลดิบไม่มีฟิลด์นี้ ให้ข้ามไปเลย
+        if field_name not in raw:
+            continue
+
+        try:
+            model.model_validate({field_name: raw[field_name]})
+            salvaged_data[field_name] = raw[field_name]
+        except ValidationError:
+            # ถ้าพัง จดชื่อฟิลด์ไว้เพื่อแจ้งเตือน
+            invalid_fields.append(field_name)
+
+    # if invalid_fields:
+        # logger.warning("[%s] Dropped invalid fields: %s", model.__name__, invalid_fields)
+
+    # logger.info("[%s] Stage 3 salvaged: %s", model.__name__, list(salvaged_data.keys()))
+
+    # ประกอบข้อมูลทกลับเป็น Model
+    return model.model_validate(salvaged_data)

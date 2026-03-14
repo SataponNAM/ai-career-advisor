@@ -1,37 +1,17 @@
 SYSTEM_CAREER_ADVISOR = """You are an expert AI Career Advisor with deep knowledge of the job market,
-skill development, and career planning. You communicate in both Thai and English naturally.
-Always be encouraging, specific, and actionable in your advice."""
+skill development, and career planning. Respond in Thai/English mix. Be encouraging, specific, and actionable in your advice."""
 
-NODE1_ANALYZE_GOAL = """
-Analyze the user's career situation from message and resume.
-
+NODE1_ANALYZE_GOAL = """Extract career info. JSON only.
 Message: {message}
 Resume: {resume}
+Respond JSON:{{"has_career_goal":bool,"career_goal":str|null,"current_role":str|null,"years_experience":num|null,"education":str|null,"summary":"Thai summary","preferences":{{"exclude_work_type":[],"prefer_work_type":[],"exclude_industry":[],"prefer_industry":[],"location":null,"exclude_company_size":[],"prefer_company_size":[]}}}}"""
 
-Respond JSON:
-{{
-  "has_career_goal": true/false,
-  "career_goal": "goal or null",
-  "current_role": "role or null",
-  "years_experience": number or null,
-  "education": "level or null",
-  "summary": "brief summary in Thai",
-  "preferences": {{"exclude_work_type": [], "prefer_industry": []}}
-}}
-"""
-
-NODE2_ANALYZE_SKILLS = """
-Analyze skills and check sufficiency for career options.
-
-Profile: role={role}, exp={exp}yrs, edu={edu}
+NODE2_ANALYZE_SKILLS = """Analyze skills and career fit. JSON only.
+Role:{current_role} Exp:{years_experience}yr Edu:{education}
 Resume: {resume}
 Message: {message}
-Preferences: {prefs}
-
-Task 1: Extract ALL skills (name, level: beginner/intermediate/advanced, category: technical/soft/domain)
-Task 2: For 5+ careers calculate coverage %
-Task 3: skill_sufficient=true if coverage ≥70% for at least ONE career
-
+prefs: {preferences}
+Rules: Extract ALL skills (name, level: beginner/intermediate/advanced, category: technical/soft/domain), For 5+ careers calculate coverage %, skill_sufficient=true if coverage ≥70% for at least ONE career
 Respond JSON:
 {{
   "detected_skills": [{{"name":"Python","level":"intermediate","category":"technical"}}],
@@ -44,13 +24,10 @@ Respond JSON:
 }}
 """
 
-NODE2_ANALYZE_SKILLS_WITH_GOAL = """
-Gap analysis for target career.
-
-Profile: role={role}, exp={exp}yrs, edu={edu}, goal={goal}
+NODE2_ANALYZE_SKILLS_WITH_GOAL = """Gap analysis for target role. JSON only.
+Role:{current_role} Exp:{years_experience}yr Edu:{education}, goal={goal}
 Resume: {resume}
 Message: {message}
-
 Respond JSON:
 {{
   "detected_skills": [{{"name":"Python","level":"intermediate","category":"technical"}}],
@@ -61,142 +38,68 @@ Respond JSON:
 }}
 """
 
-NODE_RECOMMEND = """
-User has enough skills for several careers. Present all viable options.
+NODE_RECOMMEND = """List viable careers. JSON only.
+Skills: {detected_skills}
+Coverage: {career_skill_coverage}
+Preferences: {preferences}
+Respond JSON: {{"ready_careers":[{{"title":"Backend Dev","match_score":88,"description":"Thai","matched_skills":[],"missing_minor":[],"salary_range":"60k-120k THB","why_good_fit":"Thai","typical_companies":[],"time_to_ready":"Thai"}}],"near_reach_careers":[{{"title":"Data Eng","current_coverage":55,"missing_skills":[{{"skill":"Spark","importance":"critical","learn_time":"4-6wk"}}],"total_upskill_time":"2-3mo","salary_range":"80k-150k THB","why_worth_it":"Thai"}}],"recommendation_summary":"Thai"}}"""
 
-Skills: {skills}
-Coverage: {coverage}
-Preferences: {prefs}
+NODE_MULTI_CAREER_GAP = """Multi-career gap plan. JSON only. Min 4 careers, sort easiest first. JSON only.
+Skills: {detected_skills}
+Coverage: {career_skill_coverage}
+Market data: {market_data}
+Preferences: {preferences}
+Respond JSON: {{"recommended_careers":[{{"title":"Junior Data Analyst","difficulty":"easy","current_coverage":45,"match_score":70,"description":"Thai","salary_range":"35k-70k THB","matched_skills":[],"skill_gaps":[{{"skill":"SQL","importance":"critical","reason":"Thai","learn_time":"3-4wk","free_resource":"SQLZoo"}}],"total_upskill_time":"3-4mo","roadmap_summary":["mo1:SQL","mo2:Python"],"typical_companies":[],"why_recommended":"Thai"}}],"easiest_path":"str","highest_salary_path":"str","overall_advice":"Thai"}}"""
 
-Respond JSON:
-{{
-  "ready_careers": [
-    {{"title":"Backend Developer","match_score":88,"description":"อธิบาย",
-      "matched_skills":["Python"],"missing_minor":["Docker"],
-      "salary_range":"60,000-120,000 THB","why_good_fit":"เหตุผล",
-      "typical_companies":["Agoda","Grab"],"time_to_ready":"พร้อมเลย"}}
-  ],
-  "near_reach_careers": [
-    {{"title":"Data Engineer","current_coverage":55,
-      "missing_skills":[{{"skill":"Spark","importance":"critical","learn_time":"4-6 สัปดาห์"}}],
-      "total_upskill_time":"2-3 เดือน","salary_range":"80,000-150,000 THB",
-      "why_worth_it":"เหตุผล"}}
-  ],
-  "recommendation_summary": "brief summary in Thai"
-}}
-"""
+NODE3_MARKET_ANALYSIS = """Analyze job market for target role. JSON only.
+Role:{target_role} Skills:{current_skills} Gaps:{skill_gaps}
+Exclude:{exclude_work_type} Prefer industry:{prefer_industry}
+Market data:{market_data}
+Respond JSON: {{"updated_skill_gaps": [{{"skill":"Spark","importance":"critical","reason":"...","demand_score":9.5}}],"salary_range": {{"min":"80,000","max":"150,000","currency":"THB","period":"month"}},"market_insights": ["insight1","insight2"],"top_companies": ["SCB Tech","Kasikorn"],"market_trend": "growing"}}"""
 
-NODE_MULTI_CAREER_GAP = """
-User needs skill development. Show multiple career paths with gap analysis.
-Sort easiest first (fewest missing critical skills). Minimum 4 careers.
+NODE4_CREATE_ROADMAP = """Create week-by-week learning roadmap. JSON only.
+Role:{target_role} Skills:{current_skills} Gaps:{skill_gaps}
+Market:{market_insights} Companies:{resources_data} Prefs:{preferences}
+Respond JSON: {{"target_role": "{target_role}","total_duration": "X months","milestones": [{{"week":"Week 1-2","title":"Foundation","tasks":["task1","task2"],"resources":[{{"name":"Course","url":"https://...","type":"course","cost":"free"}}],"success_metric":"metric"}}],"key_certifications": [],"daily_commitment": "2-3 hours","motivational_message": "ข้อความให้กำลังใจภาษาไทย"}}"""
 
-Skills: {skills}
-Coverage: {coverage}
-Market data: {market}
-Preferences: {prefs}
+NODE5_VALIDATE = """QA check career advisor output. JSON only.
+Role:{target_role}
+Skills:{detected_skills}
+Careers:{recommended_careers}
+Gaps:{skill_gaps}
+Roadmap:{roadmap}
+Insights:{market_insights}
+Prefs:{preferences}
+Check: skills have valid levels, careers have title+description+score,gaps have importance+reason, roadmap has ≥2 milestones with real tasks (no placeholders),all resource URLs start with http.
+Respond JSON: {{"is_valid":bool,"overall_quality_score":0-100,"issues":[{{"section":"roadmap","severity":"critical","field":"tasks","issue":"str","fix":"str"}}],"auto_fixable":bool,"fixes_applied":{{"skills":null,"careers":null,"skill_gaps":null,"roadmap":null}},"validation_summary":"Thai"}}"""
 
-Respond JSON:
-{{
-  "recommended_careers": [
-    {{"title":"Junior Data Analyst","difficulty":"easy","current_coverage":45,
-      "match_score":70,"description":"อธิบาย","salary_range":"35,000-70,000 THB",
-      "matched_skills":["Excel"],
-      "skill_gaps":[{{"skill":"SQL","importance":"critical","reason":"ใช้ทุกวัน",
-                    "learn_time":"3-4 สัปดาห์","free_resource":"SQLZoo"}}],
-      "total_upskill_time":"3-4 เดือน",
-      "roadmap_summary":["เดือน 1: SQL","เดือน 2: Python"],
-      "typical_companies":["บริษัท"],"why_recommended":"เหตุผล"}}
-  ],
-  "easiest_path": "Junior Data Analyst",
-  "highest_salary_path": "Data Engineer",
-  "overall_advice": "brief advice in Thai"
-}}
-"""
+FINAL_RESPONSE_TEMPLATE = """ Write a warm, encouraging response in Thai (3-4 paragraphs).
+User: {message}
+Path: {path_type}
+Data: {analysis_summary}
+no_goal_sufficient:  แจ้งอาชีพที่ทำได้พร้อมบอก skill สำหรับอาชีพ, แนะนำให้พัฒนาต่อ
+no_goal_insufficient: ชี้ให้เห็น skill ที่มี, แนะนำเริ่มจากอาชีพง่ายสุด, แนะนำพัฒนาทักษะที่ขาด
+has_goal: รับทราบเป้าหมาย, วิเคราะห์ gap, แนะนำ roadmap
+End with motivating sentence."""
 
-NODE3_MARKET_ANALYSIS = """
-Analyze job market for target role.
+# ── JD Score 
 
-Role: {role}
-Current skills: {skills}
-Skill gaps: {gaps}
-Preferences: {prefs}
-Market data: {market}
+JD_EXTRACT_PROMPT = """Extract JD requirements. JSON only.
+JD:{jd_text}
+{{"job_title":"str","company":str|null,"required_skills":[{{"skill":"Python","level":"advanced","is_mandatory":true}}],"required_experience_years":num|null,"required_education":str|null,"responsibilities":[],"nice_to_have":[],"keywords":[],"seniority_level":"junior|mid|senior|lead","tech_stack":[]}}"""
 
-Respond JSON:
-{{
-  "updated_skill_gaps": [{{"skill":"Spark","importance":"critical","reason":"...","demand_score":9.5}}],
-  "salary_range": {{"min":"80,000","max":"150,000","currency":"THB","period":"month"}},
-  "market_insights": ["insight1","insight2"],
-  "top_companies": ["SCB Tech","Kasikorn"],
-  "market_trend": "growing"
-}}
-"""
+RESUME_SCORE_PROMPT = """Score resume vs JD. JSON only.
+JD: {job_title} ({seniority_level})
+Skills:{required_skills} Exp:{required_experience_years}yr Edu:{required_education}
+Resp:{responsibilities} Keywords:{keywords}
+Resume:{resume_text}
+Candidate skills:{current_skills}
+Scoring: skills(40)+responsibilities(20)+experience(15)+keywords(15)+education(10)
+{{"overall_score":0-100,"ats_score":0-100,"breakdown":{{"skills_score":0-40,"experience_score":0-15,"education_score":0-10,"keywords_score":0-15,"responsibilities_score":0-20}},"matched_skills":[],"missing_skills":[{{"skill":"Kafka","is_mandatory":true,"importance":"critical"}}],"matched_keywords":[],"missing_keywords":[],"experience_gap":"str","education_match":bool,"verdict":"strong_match|good_match|partial_match|weak_match","verdict_reason":"Thai"}}"""
 
-NODE4_CREATE_ROADMAP = """
-Create week-by-week learning roadmap.
-
-Target role: {role}
-Current skills: {skills}
-Skill gaps: {gaps}
-Market insights: {insights}
-Resources: {resources}
-Preferences: {prefs}
-{retry_context}
-
-Respond JSON:
-{{
-  "target_role": "{role}",
-  "total_duration": "X months",
-  "milestones": [
-    {{"week":"Week 1-2","title":"Foundation",
-      "tasks":["task1","task2"],
-      "resources":[{{"name":"Course","url":"https://...","type":"course","cost":"free"}}],
-      "success_metric":"metric"}}
-  ],
-  "key_certifications": [],
-  "daily_commitment": "2-3 hours",
-  "motivational_message": "ข้อความให้กำลังใจภาษาไทย"
-}}
-"""
-
-NODE5_VALIDATE = """
-QA review — validate output quality.
-
-Target: {role}
-Skills: {skills}
-Careers: {careers}
-Gaps: {gaps}
-Roadmap: {roadmap}
-Preferences: {prefs}
-
-Check: skills have valid levels, careers have title+description+score,
-gaps have importance+reason, roadmap has ≥2 milestones with real tasks (no placeholders),
-all resource URLs start with http.
-
-Respond JSON:
-{{
-  "is_valid": true,
-  "overall_quality_score": 0-100,
-  "issues": [
-    {{"section":"roadmap","severity":"critical/warning","field":"tasks",
-      "issue":"description","fix":"how to fix"}}
-  ],
-  "auto_fixable": false,
-  "fixes_applied": {{"skills":null,"careers":null,"skill_gaps":null,"roadmap":null}},
-  "validation_summary": "brief summary in Thai"
-}}
-"""
-
-FINAL_RESPONSE_TEMPLATE = """
-Write a warm, encouraging response in Thai (3-4 paragraphs).
-
-User message: {message}
-Path: {path}
-Summary: {summary}
-
-- no_goal_sufficient: ชื่นชม skill, แจ้งอาชีพที่ทำได้เลย, แนะนำให้พัฒนาต่อ
-- no_goal_insufficient: ให้กำลังใจ, ชี้ให้เห็น skill ที่มี, แนะนำเริ่มจากอาชีพง่ายสุด
-- has_goal: รับทราบเป้าหมาย, วิเคราะห์ gap, ให้กำลังใจ
-
-End with motivating sentence.
-"""
+RESUME_IMPROVEMENT_PROMPT = """Resume improvement advice. JSON only.
+Job:{job_title} Score:{overall_score}/100
+Missing skills:{missing_skills} Missing keywords:{missing_keywords}
+Exp gap:{experience_gap}
+Resume:{resume_text}
+{{"priority_fixes":[{{"section":"skills","priority":"critical","issue":"Thai","suggestion":"Thai","before_example":"str","after_example":"str"}}],"keywords_to_add":[{{"keyword":"Kafka","add_to_section":"skills","context":"str"}}],"summary_rewrite":"Thai","quick_wins":[],"long_term_gaps":[],"estimated_improvement":"Thai","overall_advice":"Thai"}}"""
