@@ -3,12 +3,12 @@ skill development, and career planning. Respond in Thai/English mix. Be encourag
 
 NODE1_ANALYZE_GOAL = """Extract career info. JSON only.
 Message: {message}
-Resume: {resume}
+resume_text: {resume_text}
 Respond JSON:{{"has_career_goal":bool,"career_goal":str|null,"current_role":str|null,"years_experience":num|null,"education":str|null,"summary":"Thai summary","preferences":{{"exclude_work_type":[],"prefer_work_type":[],"exclude_industry":[],"prefer_industry":[],"location":null,"exclude_company_size":[],"prefer_company_size":[]}}}}"""
 
 NODE2_ANALYZE_SKILLS = """Analyze skills and career fit. JSON only.
 Role:{current_role} Exp:{years_experience}yr Edu:{education}
-Resume: {resume}
+resume_text: {resume_text}
 Message: {message}
 prefs: {preferences}
 Rules: Extract ALL skills (name, level: beginner/intermediate/advanced, category: technical/soft/domain), For 5+ careers calculate coverage %, skill_sufficient=true if coverage ≥70% for at least ONE career
@@ -26,7 +26,7 @@ Respond JSON:
 
 NODE2_ANALYZE_SKILLS_WITH_GOAL = """Gap analysis for target role. JSON only.
 Role:{current_role} Exp:{years_experience}yr Edu:{education}, goal={goal}
-Resume: {resume}
+resume_text: {resume_text}
 Message: {message}
 Respond JSON:
 {{
@@ -88,18 +88,18 @@ JD_EXTRACT_PROMPT = """Extract JD requirements. JSON only.
 JD:{jd_text}
 {{"job_title":"str","company":str|null,"required_skills":[{{"skill":"Python","level":"advanced","is_mandatory":true}}],"required_experience_years":num|null,"required_education":str|null,"responsibilities":[],"nice_to_have":[],"keywords":[],"seniority_level":"junior|mid|senior|lead","tech_stack":[]}}"""
 
-RESUME_SCORE_PROMPT = """Score resume vs JD. JSON only.
+resume_text_SCORE_PROMPT = """Score resume_text vs JD. JSON only.
 JD: {job_title} ({seniority_level})
 Skills:{required_skills} Exp:{required_experience_years}yr Edu:{required_education}
 Resp:{responsibilities} Keywords:{keywords}
-Resume:{resume_text}
+resume_text:{resume_text_text}
 Candidate skills:{current_skills}
 Scoring: skills(40)+responsibilities(20)+experience(15)+keywords(15)+education(10)
 {{"overall_score":0-100,"ats_score":0-100,"breakdown":{{"skills_score":0-40,"experience_score":0-15,"education_score":0-10,"keywords_score":0-15,"responsibilities_score":0-20}},"matched_skills":[],"missing_skills":[{{"skill":"Kafka","is_mandatory":true,"importance":"critical"}}],"matched_keywords":[],"missing_keywords":[],"experience_gap":"str","education_match":bool,"verdict":"strong_match|good_match|partial_match|weak_match","verdict_reason":"Thai"}}"""
 
-RESUME_IMPROVEMENT_PROMPT = """Resume improvement advice. JSON only.
+resume_text_IMPROVEMENT_PROMPT = """resume_text improvement advice. JSON only.
 Job:{job_title} Score:{overall_score}/100
 Missing skills:{missing_skills} Missing keywords:{missing_keywords}
 Exp gap:{experience_gap}
-Resume:{resume_text}
+resume_text:{resume_text_text}
 {{"priority_fixes":[{{"section":"skills","priority":"critical","issue":"Thai","suggestion":"Thai","before_example":"str","after_example":"str"}}],"keywords_to_add":[{{"keyword":"Kafka","add_to_section":"skills","context":"str"}}],"summary_rewrite":"Thai","quick_wins":[],"long_term_gaps":[],"estimated_improvement":"Thai","overall_advice":"Thai"}}"""

@@ -1,15 +1,39 @@
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from typing import Literal, Optional
-import logging
-
-# logger = logging.getLogger(__name__)
-
-# Shared sub-models
 
 class Skill(BaseModel):
     name: str
     level: Literal["beginner", "intermediate", "advanced"] = "beginner"
     category: Literal["technical", "soft", "domain"] = "technical"
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def normalise_category(cls, v):
+        mapping = {
+            "technical":    "technical",
+            "soft":         "soft",
+            "domain":       "domain",
+            "professional": "domain",
+            "business":     "domain",
+            "interpersonal":"soft",
+            "hard":         "technical",
+        }
+        return mapping.get(str(v).lower(), "technical")
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def normalise_level(cls, v):
+        mapping = {
+            "beginner":     "beginner",
+            "junior":       "beginner",
+            "basic":        "beginner",
+            "intermediate": "intermediate",
+            "mid":          "intermediate",
+            "advanced":     "advanced",
+            "senior":       "advanced",
+            "expert":       "advanced",
+        }
+        return mapping.get(str(v).lower(), "beginner")
 
 class SkillGap(BaseModel):
     skill: str
@@ -17,6 +41,20 @@ class SkillGap(BaseModel):
     reason: str = ""
     learn_time: str = ""
     free_resource: Optional[str] = None
+
+    @field_validator("importance", mode="before")
+    @classmethod
+    def normalise_importance(cls, v):
+        mapping = {
+            "critical":    "critical",
+            "high":        "critical",
+            "important":   "important",
+            "medium":      "important",
+            "nice-to-have": "nice-to-have",
+            "low":         "nice-to-have",
+            "optional":    "nice-to-have",
+        }
+        return mapping.get(str(v).lower(), "important")
 
 class SalaryRange(BaseModel):
     min: str = ""
@@ -71,6 +109,14 @@ class Node2aOutput(BaseModel):
     skill_coverage_summary: str = ""
     career_skill_coverage:  list[CareerCoverage] = []
 
+    @field_validator("skill_sufficient", mode="before")
+    @classmethod
+    def coerce_bool(cls, v):
+        if isinstance(v, bool): return v
+        if isinstance(v, str): return v.strip().lower() in ("true", "1", "yes")
+        return bool(v)
+
+
 # Node 2b output model
 
 class Node2bOutput(BaseModel):
@@ -85,6 +131,20 @@ class MarketSkillGap(BaseModel):
     importance:   Literal["critical", "important", "nice-to-have"] = "important"
     reason:       str = ""
     demand_score: float = 0.0
+
+    @field_validator("importance", mode="before")
+    @classmethod
+    def normalise_importance(cls, v):
+        mapping = {
+            "critical":     "critical",
+            "high":         "important",   # ← was "critical", should be "important"
+            "important":    "important",
+            "medium":       "important",
+            "nice-to-have": "nice-to-have",
+            "low":          "nice-to-have",
+            "optional":     "nice-to-have",
+        }
+        return mapping.get(str(v).lower(), "important")
 
 class Node3Output(BaseModel):
     updated_skill_gaps: list[MarketSkillGap] = []
@@ -169,7 +229,7 @@ class Node4Output(BaseModel):
         if not v:
             raise ValueError("roadmap must have at least 1 milestone")
         return v
-    
+
 # Node 5 output model
 
 class ValidationIssue(BaseModel):
@@ -178,6 +238,20 @@ class ValidationIssue(BaseModel):
     field:    str = ""
     issue:    str
     fix:      str = ""
+
+    @field_validator("severity", mode="before")
+    @classmethod
+    def normalise_severity(cls, v):
+        mapping = {
+            "critical": "critical",
+            "high":     "critical",
+            "warning":  "warning",
+            "medium":   "warning",
+            "low":      "warning",
+            "info":     "warning",
+            "minor":    "warning",
+        }
+        return mapping.get(str(v).lower(), "warning")
 
 class FixesApplied(BaseModel):
     skills:     Optional[list] = None
@@ -198,19 +272,19 @@ class Node5Output(BaseModel):
 def coerce_list(val) -> list:
     if isinstance(val, list): return val
     if isinstance(val, dict): return [val]
-    if isinstance(val, str):  
+    if isinstance(val, str):
         if val:
             return [val]
         else:
             return []
-        
+
     return []
 
 def repair(model: type[BaseModel], raw: dict) -> dict:
     # ป้องกัน error กรณีที่ข้อมูลดิบไม่ใช่ Dictionary
     if not isinstance(raw, dict):
         return {}
-    
+
     repaired = {}
     hints = model.model_fields # ดึงรายการฟิลด์ทั้งหมดที่ Model ต้องการ
 
@@ -219,60 +293,58 @@ def repair(model: type[BaseModel], raw: dict) -> dict:
         if key not in hints:
             continue
 
-        # ดูว่าฟิลด์นี้ถูกกำหนด Type hint ไว้ว่าอะไร (เช่น list[str], int, str) 
+        # ดูว่าฟิลด์นี้ถูกกำหนด Type hint ไว้ว่าอะไร (เช่น list[str], int, str)
         annotation = str(hints[key].annotation)
-        
+
         # ถ้าฟิลด์นี้ต้องการ List แต่ได้ข้อมูลแบบอื่นมา ให้แปลงเป็น List
         if "list" in annotation.lower() and not isinstance(val, list):
             val = coerce_list(val)
         if val is None: # ถ้าค่าว่างให้ข้าม
             continue
-        
+
         repaired[key] = val
 
     return repaired
 
-def parse(model: type[BaseModel], raw: dict) -> BaseModel:
-    # ตรวจสอบว่าข้อมูลดิบเป็น dict หรือไม่ ถ้าไม่ใช่ให้ log warning และใช้ค่า default ของ Model แทน
+def parse(model: type[BaseModel], raw: str | dict) -> BaseModel:
+    # ── Normalise input ───────────────────────────────────────────────────────
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except json.JSONDecodeError:
+            match = re.search(r"```(?:json)?\s*([\s\S]+?)\s*```", raw)
+            if match:
+                try:
+                    raw = json.loads(match.group(1).strip())
+                except json.JSONDecodeError:
+                    return model()
+            else:
+                return model()
+
     if not isinstance(raw, dict):
-        # logger.warning("[%s] LLM returned non-dict (%s) → using defaults", model.__name__, type(raw).__name__)
         return model()
 
-    # Stage 1 — ส่งข้อมูลดิบให้มาตามโครงสร้าง Model
+    # ── Stage 1 ───────────────────────────────────────────────────────────────
     try:
         return model.model_validate(raw)
     except ValidationError:
         pass
 
-    # Stage 2 — attempt repair (e.g. coerce list, drop unknown fields) and re-parse
+    # ── Stage 2: repair ───────────────────────────────────────────────────────
     try:
-        result = model.model_validate(repair(model, raw))
-        # logger.info("[%s] Stage 2 repair succeeded", model.__name__)
-
-        return result
+        return model.model_validate(repair(model, raw))
     except ValidationError:
         pass
 
-    # Stage 3 — ตรวจสอบทีละ field field ไหนใช้ได้ให้เก็บไว้ field ไหนพังให้ตัดทิ้งไปใช้ default
+    # ── Stage 3: field-by-field salvage ──────────────────────────────────────
     salvaged_data = {}
-    invalid_fields = []
-
     for field_name in model.model_fields:
-        # ถ้าในข้อมูลดิบไม่มีฟิลด์นี้ ให้ข้ามไปเลย
         if field_name not in raw:
             continue
-
         try:
             model.model_validate({field_name: raw[field_name]})
             salvaged_data[field_name] = raw[field_name]
         except ValidationError:
-            # ถ้าพัง จดชื่อฟิลด์ไว้เพื่อแจ้งเตือน
-            invalid_fields.append(field_name)
+            pass
 
-    # if invalid_fields:
-        # logger.warning("[%s] Dropped invalid fields: %s", model.__name__, invalid_fields)
-
-    # logger.info("[%s] Stage 3 salvaged: %s", model.__name__, list(salvaged_data.keys()))
-
-    # ประกอบข้อมูลทกลับเป็น Model
     return model.model_validate(salvaged_data)

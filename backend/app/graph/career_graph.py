@@ -75,18 +75,41 @@ llm = ChatGoogleGenerativeAI(
 )
 
 async def call_llm(system: str, prompt: str):
-
     response = await llm.ainvoke([
         SystemMessage(content=system),
         HumanMessage(content=prompt),
     ])
     content = response.content
 
+    # Gemini may return content as a list of blocks; extract text
+    if isinstance(content, list):
+        content = " ".join(
+            block.get("text", "") if isinstance(block, dict) else str(block)
+            for block in content
+        )
+
+    if not content or not content.strip():
+        print("[call_llm] ⚠️ LLM returned empty content")
+        return {}
+
+    # Strip markdown fences first (Gemini often wraps JSON in ```json ... ```)
+    stripped = content.strip()
+    fence_match = re.search(r"```(?:json)?\s*([\s\S]+?)\s*```", stripped)
+    if fence_match:
+        stripped = fence_match.group(1).strip()
+
     try:
-        return json.loads(content)
+        return json.loads(stripped)
     except json.JSONDecodeError:
-        match = re.search(r"```(?:json)?\s*([\s\S]+?)\s*```", content)
-        return json.loads(match.group(1)) if match else {}
+        # Try extracting first {...} block from raw content
+        brace_match = re.search(r"(\{[\s\S]+\})", content)
+        if brace_match:
+            try:
+                return json.loads(brace_match.group(1))
+            except json.JSONDecodeError:
+                pass
+        print(f"[call_llm] ⚠️ Could not parse JSON. Raw content (first 500 chars):\n{content[:500]}")
+        return {}
 
 # ── State ─────────────────────────────────────────────────────────────────────
 class CareerState(TypedDict):
@@ -131,35 +154,37 @@ class CareerState(TypedDict):
 # ─── Node 1 ───────────────────────────────────────────────────────────────────
 # Analyze career goal from user message and resume.
 async def analyze_goal(state: CareerState) -> CareerState:
-    try:
-        raw = await call_llm(
-            system=SYSTEM_CAREER_ADVISOR,
-            prompt=NODE1_ANALYZE_GOAL.format(
-                message=state["message"],
-                resume_text=state.get("resume_text") or "none",
-            ),
-        )
-        result: Node1Output = parse(Node1Output, raw)
-        
-        return {
-            **state,
-            "has_career_goal": result.has_career_goal,
-            "career_goal": result.career_goal or state.get("career_goal"),
-            "current_profile": {
-                "current_role": result.current_role,
-                "years_experience": result.years_experience,
-                "education": result.education,
-                "summary": result.summary,
-            },
-            "preferences": result.preference.model_dump(),
-            "validation_retry_count": 0,
-        }
-    except Exception as e:
-        return {**state, "error": str(e), "has_career_goal": False, "validation_retry_count": 0}
+  print(f"▶ Node1:Analyze goal...")
+  try:
+      raw = await call_llm(
+          system=SYSTEM_CAREER_ADVISOR,
+          prompt=NODE1_ANALYZE_GOAL.format(
+              message=state["message"],
+              resume_text=state.get("resume_text") or "none",
+          ),
+      )
+      result: Node1Output = parse(Node1Output, raw)
 
+      return {
+          **state,
+          "has_career_goal": result.has_career_goal,
+          "career_goal": result.career_goal or state.get("career_goal"),
+          "current_profile": {
+              "current_role": result.current_role,
+              "years_experience": result.years_experience,
+              "education": result.education,
+              "summary": result.summary,
+          },
+          "preferences": result.preferences.model_dump(),
+          "validation_retry_count": 0,
+      }
+  except Exception as e:
+      return {**state, "error": str(e), "has_career_goal": False, "validation_retry_count": 0}
+  
 # ─── Node 2a: Skill Check (no goal) ──────────────────────────────────────────
 # วิเคราะห์ทักษะที่มีอยู่และความเหมาะสมกับอาชีพต่าง ไม่มีเป้าหมายอาชีพที่ชัดเจน เช็คว่าทักษะเพียงพอหรือไม่
 async def analyze_skills(state: CareerState) -> CareerState:
+    print(f"▶ Node 2: Skills check...")
     try:
         profile = state.get("current_profile", {})
         prefs_json = json.dumps(state.get("preferences", {}), ensure_ascii=False)
@@ -170,7 +195,7 @@ async def analyze_skills(state: CareerState) -> CareerState:
                 current_role=profile.get("current_role", "Unknown"),
                 years_experience=profile.get("years_experience", "Unknown"),
                 education=profile.get("education", "Unknown"),
-                resume=state.get("resume_text") or "No resume provided",
+                resume_text=state.get("resume_text") or "No resume provided",
                 message=state.get("message", ""),
                 preferences=prefs_json,
             ),
@@ -222,6 +247,7 @@ async def analyze_gaps(state: CareerState) -> CareerState:
 # ─── Node RecommendFull: skill_sufficient = true ──────────────────────────────
 #  แนะนำเส้นทางอาชีพที่เหมาะสมโดยพิจารณาจากทักษะที่มีอยู่และความชอบของผู้ใช้ ไม่มีเป้าหมายอาชีพที่ชัดเจนทักษะเพียงพอ
 async def node_recommend(state: CareerState) -> CareerState:
+    print(f"▶ Node Recommend Career")
     try:
         detected_skills_json = json.dumps(state.get("detected_skills", []), ensure_ascii=False)
         career_coverage_json = json.dumps(state.get("career_skill_coverage", []), ensure_ascii=False, separators=(",", ":"))
@@ -503,7 +529,7 @@ def route_by_sufficiency(state: CareerState) -> str:
 def route_after_validation(state: CareerState) -> str:
     if state.get("validation_passed"):
         return "final_response"
-    
+
     retry = state.get("validation_retry_count", 0)
 
     if retry < MAX_RETRY:

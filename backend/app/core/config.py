@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # Gemini
     gemini_api_key: str
-    gemini_model: str = "gemini-3.1-flash-lite"
+    gemini_model: str = "gemini-3.1-flash-lite-preview"
     gemini_embedding_model: str = "models/text-embedding-004"
 
     # Tavily
