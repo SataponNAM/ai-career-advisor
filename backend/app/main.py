@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 
 from app.core.config import get_settings
-# from app.api.routes import router
+from app.api.routes import router
 
 settings = get_settings()
 
@@ -19,4 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.include_router(router)
+app.include_router(router)
+
+print("CORS middleware configured to allow localhost:3000")
