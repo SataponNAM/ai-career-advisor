@@ -9,10 +9,17 @@ THREAD_ID = "default"
 def _config(thread_id: str = THREAD_ID) -> dict:
     return {"configurable": {"thread_id": thread_id}}
 
+def _to_dict(value) -> dict:
+    if isinstance(value, dict):
+        return value
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+    return {}
+
 class CareerAdvisorService:
     async def analyze(
         self,
-        user_id: str,
+        thread_id: str,
         message: str,
         resume_text: str | None = None,
         career_goal: str | None = None,
@@ -48,10 +55,10 @@ class CareerAdvisorService:
 
         final_state = await career_graph.ainvoke(
             initial_state,
-            # config=_config(user_id),
+            config=_config(thread_id),
         )
 
-        return self._build_response(final_state)
+        return self.build_response(final_state)
     
     async def chat(self, message: str, thread_id: str) -> dict:
         settings = get_settings()
@@ -80,9 +87,9 @@ class CareerAdvisorService:
         response = await chat_llm.ainvoke(messages)
         return {"thread_id": thread_id, "message": response.content}
     
-    async def request_skill_upgrade(self, user_id: str, selected_career: str) -> dict:
+    async def request_skill_upgrade(self, thread_id: str, selected_career: str) -> dict:
         """User เลือกอาชีพจาก near_reach_careers → upgrade plan"""
-        snapshot = career_graph.get_state(_config(user_id))
+        snapshot = career_graph.get_state(_config(thread_id))
         existing = snapshot.values if snapshot else {}
 
         initial_state: CareerState = {
@@ -112,9 +119,9 @@ class CareerAdvisorService:
             "error":                       None,
         }
 
-        final_state = await upgrade_graph.ainvoke(
+        final_state = await career_graph.ainvoke(
             initial_state,
-            config=_config(f"{user_id}_upgrade_{selected_career}"),
+            config=_config(f"{thread_id}_upgrade_{selected_career}"),
         )
         return {
             "selected_career":    selected_career,
@@ -125,8 +132,8 @@ class CareerAdvisorService:
 
     def build_response(self, state: CareerState) -> dict:
         path = state.get("path_type", "has_goal")
-        ma   = (state.get("market_data") or {}).get("analysis", {})
-        val  = state.get("validation_result") or {}
+        ma = _to_dict((state.get("market_data") or {}).get("analysis", {}))
+        val = _to_dict(state.get("validation_result") or {})
         warnings  = [i for i in val.get("issues", []) if i.get("severity") == "warning"]
         critical  = [i for i in val.get("issues", []) if i.get("severity") == "critical"]
 

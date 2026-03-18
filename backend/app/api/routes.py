@@ -6,14 +6,15 @@ from typing import Optional
 
 from app.core.career_service import CareerAdvisorService
 from app.tools.resume_parser import parse_resume
+from app.graph.career_graph import tavily_cache
 
-router  = APIRouter(prefix="/api/v1", tags=["career"])
+router  = APIRouter(prefix="", tags=["career"])
 service = CareerAdvisorService() 
 
 @router.post("/analyze")
 async def analyze_career(
-    message:      str            = Form(...),
-    thread_id:      Optional[str]  = Form(default=None),
+    message: str = Form(...),
+    thread_id: Optional[str]  = Form(default=None),
     career_goal:  Optional[str]  = Form(default=None),
     preferences:  Optional[str]  = Form(default=None),
     resume_file:  Optional[UploadFile] = File(default=None),
@@ -40,7 +41,7 @@ async def analyze_career(
             pass
 
     result = await service.analyze(
-        user_id=thread_id,
+        thread_id=thread_id,
         message=message,
         resume_text=resume_text,
         career_goal=career_goal,
@@ -57,28 +58,28 @@ async def chat(
     thread_id: str = Form(...),
     message: str = Form(...),
 ):
-    return await service.chat(user_id=thread_id, message=message)
+    return await service.chat(thread_id=thread_id, message=message)
 
 
-@router.post("/skill-upgrade")
-async def skill_upgrade(
-    thread_id:          str = Form(...),
-    selected_career:  str = Form(...),
-):
-    result = await service.request_skill_upgrade(
-        user_id=thread_id,
-        selected_career=selected_career,
-    )
-    if result.get("error"):
-        raise HTTPException(500, result["error"])
-    return result
+# @router.post("/skill-upgrade")
+# async def skill_upgrade(
+#     thread_id:          str = Form(...),
+#     selected_career:  str = Form(...),
+# ):
+#     result = await service.request_skill_upgrade(
+#         thread_id=thread_id,
+#         selected_career=selected_career,
+#     )
+#     if result.get("error"):
+#         raise HTTPException(500, result["error"])
+#     return result
 
 
 @router.get("/health")
 async def health():
-    from app.graph.career_graph import _tavily_cache
+    
     return {
         "status":               "ok",
         "storage":              "MemorySaver (in-memory)",
-        "tavily_cache_entries": len(_tavily_cache),
+        "tavily_cache_entries": len(tavily_cache),
     }

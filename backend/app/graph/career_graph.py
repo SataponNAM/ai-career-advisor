@@ -111,6 +111,13 @@ async def call_llm(system: str, prompt: str):
         print(f"[call_llm] ⚠️ Could not parse JSON. Raw content (first 500 chars):\n{content[:500]}")
         return {}
 
+def to_dict(value) -> dict:
+    if isinstance(value, dict):
+        return value
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+    return {}
+
 # ── State ─────────────────────────────────────────────────────────────────────
 class CareerState(TypedDict):
     message: str
@@ -153,6 +160,7 @@ class CareerState(TypedDict):
 
 # ─── Node 1 ───────────────────────────────────────────────────────────────────
 # Analyze career goal from user message and resume.
+
 async def analyze_goal(state: CareerState) -> CareerState:
   print(f"▶ Node1:Analyze goal...")
   try:
@@ -242,7 +250,15 @@ async def analyze_gaps(state: CareerState) -> CareerState:
             "path_type": "has_goal",
         }
     except Exception as e:
-        return {**state, "error": str(e), "path_type": "has_goal"}
+        print(f"[Node2b] fallback due to error: {e}")
+        return {
+            **state,
+            "detected_skills": state.get("detected_skills") or [],
+            "skill_gaps": state.get("skill_gaps") or [],
+            "recommended_careers": [{"title": state.get("career_goal") or "Target Role", "match_score": 0}],
+            "path_type": "has_goal",
+            "error": None,
+        }
 
 # ─── Node RecommendFull: skill_sufficient = true ──────────────────────────────
 #  แนะนำเส้นทางอาชีพที่เหมาะสมโดยพิจารณาจากทักษะที่มีอยู่และความชอบของผู้ใช้ ไม่มีเป้าหมายอาชีพที่ชัดเจนทักษะเพียงพอ
@@ -306,9 +322,9 @@ async def node_multi_career_gap(state: CareerState) -> CareerState:
 
         return {
             **state,
-            "recommended_careers": result.get("recommended_careers", []),
+            "recommended_careers": [career.model_dump() for career in result.recommended_careers],
             "skill_gaps": [],
-            "market_data": {"raw": market_data, "analysis": result},
+            "market_data": {"raw": market_data, "analysis": result.model_dump()},
             "path_type": "no_goal_insufficient",
             "previous_node": "multi_gap",
         }
@@ -318,6 +334,7 @@ async def node_multi_career_gap(state: CareerState) -> CareerState:
 # ─── Node 3: Market Agent (has_goal) ─────────────────────────────────────────
 # วิเคราะห์ตลาดงานสำหรับเป้าหมายอาชีพ
 async def market_agent(state: CareerState) -> CareerState:
+    market_data = {}
     try:
         tool = CareerSearchTool()
         target_role = state.get("career_goal", "Software Developer")
@@ -368,18 +385,30 @@ async def market_agent(state: CareerState) -> CareerState:
 
         return {
             **state,
-            "market_data": {"raw": market_data, "analysis": result},
+            "market_data": {"raw": market_data, "analysis": result.model_dump()},
             "skill_gaps": [gap.model_dump() for gap in result.updated_skill_gaps],
         }
     except Exception as e:
-        return {**state, "error": str(e), "market_data": {}}
+        print(f"[Node3] fallback due to error: {e}")
+        fallback_analysis = {
+            "updated_skill_gaps": state.get("skill_gaps") or [],
+            "salary_range": {},
+            "market_insights": [],
+            "top_companies": [],
+            "market_trend": "",
+        }
+        return {
+            **state,
+            "market_data": {"raw": market_data, "analysis": fallback_analysis},
+            "error": None,
+        }
 
 # ── Node 4: Roadmap Planner ───────────────────────────────────────────────────
 async def create_roadmap(state: CareerState) -> CareerState:
     retry = state.get("validation_retry_count", 0)
 
     try:
-        market_analysis = (state.get("market_data") or {}).get("analysis", {})
+        market_analysis = to_dict((state.get("market_data") or {}).get("analysis", {}))
         market_raw = (state.get("market_data") or {}).get("raw", {})
 
         retry_context = ""
@@ -392,7 +421,7 @@ async def create_roadmap(state: CareerState) -> CareerState:
                     for issue in issues
                 )
 
-        skills_json = json.dumps((state.get("detected_skills") or [])[:10]),
+        skills_json = json.dumps((state.get("detected_skills") or [])[:10])
         skill_gaps_json = json.dumps((state.get("skill_gaps") or [])[:5])
         market_json = json.dumps(market_analysis.get("market_insights", []), ensure_ascii=False)
         resource_json = json.dumps(market_raw.get("learning_resources", [])[:5], ensure_ascii=False)[:2000]
@@ -413,14 +442,36 @@ async def create_roadmap(state: CareerState) -> CareerState:
 
         return {**state, "roadmap": result.model_dump(), "previous_node": "node4"}
     except Exception as e:
-        return {**state, "error": str(e), "previous_node": "node4"}
+        print(f"[Node4] fallback due to error: {e}")
+        fallback_roadmap = {
+            "target_role": state.get("career_goal") or "Target Role",
+            "total_duration": "8-12 weeks",
+            "milestones": [
+                {
+                    "week": "1-2",
+                    "title": "Set learning baseline",
+                    "tasks": ["Review core skills", "Create weekly schedule"],
+                    "resources": [],
+                    "success_metric": "Complete first learning checklist",
+                }
+            ],
+            "key_certifications": [],
+            "daily_commitment": "1-2 hours/day",
+            "motivational_message": "Keep improving step by step.",
+        }
+        return {
+            **state,
+            "roadmap": fallback_roadmap,
+            "previous_node": "node4",
+            "error": None,
+        }
 
 # ── Node 5: Validator ─────────────────────────────────────────────────────────
 async def validate(state: CareerState) -> CareerState:
 
     try:
         market_data = state.get("market_data") or {}
-        market_analysis = market_data.get("analysis", {})
+        market_analysis = to_dict(market_data.get("analysis", {}))
 
         skills_json = json.dumps((state.get("detected_skills") or [])[:15], ensure_ascii=False)
         careers_json = json.dumps(state.get("recommended_careers") or [], ensure_ascii=False)
@@ -480,7 +531,7 @@ async def final_response(state: CareerState) -> CareerState:
     path = state.get("path_type", "has_goal")
 
     try:
-        market_analysis = (state.get("market_data") or {}).get("analysis", {})
+        market_analysis = to_dict((state.get("market_data") or {}).get("analysis", {}))
 
         if path == "no_goal_sufficient": # มีทักษะเพียงพอแต่ไม่มีเป้าหมายชัดเจน
             summary = {
