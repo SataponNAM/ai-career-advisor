@@ -9,7 +9,7 @@ THREAD_ID = "default"
 def _config(thread_id: str = THREAD_ID) -> dict:
     return {"configurable": {"thread_id": thread_id}}
 
-def _to_dict(value) -> dict:
+def to_dict(value) -> dict:
     if isinstance(value, dict):
         return value
     if hasattr(value, "model_dump"):
@@ -132,8 +132,8 @@ class CareerAdvisorService:
 
     def build_response(self, state: CareerState) -> dict:
         path = state.get("path_type", "has_goal")
-        ma = _to_dict((state.get("market_data") or {}).get("analysis", {}))
-        val = _to_dict(state.get("validation_result") or {})
+        ma = to_dict((state.get("market_data") or {}).get("analysis", {}))
+        val = to_dict(state.get("validation_result") or {})
         warnings  = [i for i in val.get("issues", []) if i.get("severity") == "warning"]
         critical  = [i for i in val.get("issues", []) if i.get("severity") == "critical"]
 

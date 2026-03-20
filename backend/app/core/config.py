@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
-        extra="ignore"  # ป้องกัน error ถ้า .env มี variable อื่น
+        extra="ignore" 
     )
     
     # App

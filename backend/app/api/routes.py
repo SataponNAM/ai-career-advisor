@@ -1,6 +1,5 @@
 import uuid
 import json
-import logging
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional
 
@@ -19,8 +18,8 @@ async def analyze_career(
     preferences:  Optional[str]  = Form(default=None),
     resume_file:  Optional[UploadFile] = File(default=None),
 ):
-    if not thread_id:
-        thread_id = str(uuid.uuid4())
+    # if not thread_id:
+    #     thread_id = str(uuid.uuid4())
 
     resume_text = None
     if resume_file:

@@ -191,6 +191,7 @@ async def analyze_goal(state: CareerState) -> CareerState:
   
 # ─── Node 2a: Skill Check (no goal) ──────────────────────────────────────────
 # วิเคราะห์ทักษะที่มีอยู่และความเหมาะสมกับอาชีพต่าง ไม่มีเป้าหมายอาชีพที่ชัดเจน เช็คว่าทักษะเพียงพอหรือไม่
+
 async def analyze_skills(state: CareerState) -> CareerState:
     print(f"▶ Node 2: Skills check...")
     try:
@@ -221,6 +222,7 @@ async def analyze_skills(state: CareerState) -> CareerState:
     
 # ─── Node 2b: Gap Analysis (has goal) ────────────────────────────────────────
 # วิเคราะห์ช่องว่างของทักษะสำหรับเป้าหมายอาชีพที่ชัดเจน
+
 async def analyze_gaps(state: CareerState) -> CareerState:
     print(f"[Node2b] Gap analysis for: {state.get('career_goal')}")
     try:
@@ -565,6 +567,7 @@ async def final_response(state: CareerState) -> CareerState:
         )
         return {**state, "final_response": response}
     except Exception:
+        print(f"[Final Response] fallback due to error: {state.get('error')}")
         return {**state, "final_response": "การวิเคราะห์เสร็จสิ้นแล้ว กรุณาดูผลลัพธ์ด้านล่าง"}
 
 # ── Routers ───────────────────────────────────────────────────────────────────
