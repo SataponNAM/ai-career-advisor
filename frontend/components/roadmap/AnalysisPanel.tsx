@@ -5,7 +5,7 @@ import {
   SkillTags,
   CareerCards,
   SkillGapList,
-  SalaryCard,
+  // SalaryCard,
   RoadmapTimeline,
 } from "./AnalysisCards";
 
@@ -122,7 +122,7 @@ export default function AnalysisPanel({
       )}
 
       {/* Salary Range */}
-      {analysis.salary_range && <SalaryCard salary={analysis.salary_range} />}
+      {/* {analysis.salary_range && <SalaryCard salary={analysis.salary_range} />} */}
 
       {/* Skill Gaps */}
       {analysis.skill_gaps?.length > 0 && (
