@@ -54,7 +54,7 @@ async def analyze_career(
 
 @router.post("/chat")
 async def chat(
-    thread_id: str = Form(...),
+    thread_id: Optional[str] = Form(...),
     message: str = Form(...),
 ):
     return await service.chat(thread_id=thread_id, message=message)

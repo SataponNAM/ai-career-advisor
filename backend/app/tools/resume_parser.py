@@ -3,7 +3,6 @@ import pdfplumber
 from docx import Document
 
 async def parse_resume(file_bytes: bytes, filename: str) -> str:
-    """Extract text from uploaded resume (PDF or DOCX)."""
     filename_lower = filename.lower()
 
     if filename_lower.endswith(".pdf"):

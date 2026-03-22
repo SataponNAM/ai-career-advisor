@@ -6,7 +6,7 @@ from app.core.config import get_settings
 
 THREAD_ID = "default" 
 
-def _config(thread_id: str = THREAD_ID) -> dict:
+def config(thread_id: str = THREAD_ID) -> dict:
     return {"configurable": {"thread_id": thread_id}}
 
 def to_dict(value) -> dict:
@@ -55,7 +55,7 @@ class CareerAdvisorService:
 
         final_state = await career_graph.ainvoke(
             initial_state,
-            config=_config(thread_id),
+            config=config(thread_id),
         )
 
         return self.build_response(final_state)
@@ -63,7 +63,7 @@ class CareerAdvisorService:
     async def chat(self, message: str, thread_id: str) -> dict:
         settings = get_settings()
 
-        snapshot = career_graph.get_state(_config(thread_id))
+        snapshot = career_graph.get_state(config(thread_id))
         history: list = []
 
         if snapshot and snapshot.values:
@@ -89,7 +89,7 @@ class CareerAdvisorService:
     
     async def request_skill_upgrade(self, thread_id: str, selected_career: str) -> dict:
         """User เลือกอาชีพจาก near_reach_careers → upgrade plan"""
-        snapshot = career_graph.get_state(_config(thread_id))
+        snapshot = career_graph.get_state(config(thread_id))
         existing = snapshot.values if snapshot else {}
 
         initial_state: CareerState = {
@@ -121,7 +121,7 @@ class CareerAdvisorService:
 
         final_state = await career_graph.ainvoke(
             initial_state,
-            config=_config(f"{thread_id}_upgrade_{selected_career}"),
+            config=config(f"{thread_id}_upgrade_{selected_career}"),
         )
         return {
             "selected_career":    selected_career,
