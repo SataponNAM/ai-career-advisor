@@ -1,10 +1,19 @@
 "use client";
 
-import { ChatMessage } from "@/types";
+import {
+  AnalysisResult,
+  ChatMessage,
+  NoGoalInsufficientAnalysis,
+  NoGoalSufficientAnalysis,
+} from "@/types";
 import { Button } from "@radix-ui/themes";
 import { Send, Sparkles } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import Dropzone from "./Dropzone";
+import ReadyCareersView from "../career/ReadyCareersView";
+import MultiCareerGapView from "../career/MultiCareerGapView";
+import AnalysisPanel from "../roadmap/AnalysisPanel";
 
 interface ChatAreaProps {
   showResumeDropzone: boolean;
@@ -13,6 +22,56 @@ interface ChatAreaProps {
   setUploadedFile: (file: File | null) => void;
   setShowResumeDropzone: (show: boolean) => void;
 }
+
+const analysisExample: ChatMessage = {
+  role: "assistant",
+  content:
+    "Based on your resume, you have strong experience in software development but limited exposure to cloud technologies. I recommend focusing on learning AWS or Azure to enhance your career prospects in the cloud computing field.",
+  timestamp: new Date(),
+  analysis: {
+    path_type: "has_goal",
+    current_profile: {
+      current_role: "Software Engineer",
+      years_experience: 5,
+      education: "Bachelor's in Computer Science",
+      summary:
+        "Experienced software engineer with a focus on backend development and a passion for learning new technologies.",
+    },
+    detected_skills: [
+      { name: "Python", level: "advanced", category: "technical" },
+      { name: "Java", level: "advanced", category: "technical" },
+      { name: "SQL", level: "intermediate", category: "technical" },
+    ],
+    recommended_careers: [
+      { title: "Cloud Engineer", match_score: 0.9 },
+      { title: "DevOps Engineer", match_score: 0.85 },
+    ],
+    skill_gaps: [
+      {
+        skill: "AWS",
+        importance: "critical",
+        reason: "Highly recommended for cloud-related roles",
+      },
+      {
+        skill: "Azure",
+        importance: "important",
+        reason: "Valuable for cloud-related roles",
+      },
+    ],
+    roadmap: null,
+    market_insights: [
+      "Cloud computing is one of the fastest-growing sectors in tech.",
+      "AWS and Azure are the leading cloud platforms with high demand for skilled professionals.",
+    ],
+    salary_range: {
+      min: "80000",
+      max: "120000",
+      currency: "USD",
+      period: "year",
+    },
+    preferences_applied: { location: "Bangkok", remote: true },
+  },
+};
 
 export default function ChatInterface({
   showResumeDropzone,
@@ -36,6 +95,10 @@ export default function ChatInterface({
 
   const addMessage = (msg: Omit<ChatMessage, "timestamp">) =>
     setMessages((prev) => [...prev, { ...msg, timestamp: new Date() }]);
+
+  useEffect(() => {
+    setMessages([analysisExample]);
+  }, []);
 
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
@@ -86,6 +149,32 @@ export default function ChatInterface({
     setShowResumeDropzone(false);
   }, []);
 
+  const renderAnalysis = (analysis: AnalysisResult & { user_id?: string }) => {
+    if (analysis.path_type === "no_goal_sufficient") {
+      const a = analysis as NoGoalSufficientAnalysis & { user_id?: string };
+      return (
+        <ReadyCareersView
+          readyCareers={a.ready_careers || []}
+          nearReachCareers={a.near_reach_careers || []}
+        />
+      );
+    }
+    if (analysis.path_type === "no_goal_insufficient") {
+      const a = analysis as NoGoalInsufficientAnalysis & { user_id?: string };
+      return (
+        <MultiCareerGapView
+          careers={(a.recommended_careers || []) as any}
+          easiest_path={a.easiest_path}
+          highest_salary_path={a.highest_salary_path}
+          overall_advice={a.overall_advice}
+          detected_skills={(a.detected_skills || []).map((s) => s.name)}
+        />
+      );
+    }
+    return <AnalysisPanel analysis={analysis} sessionType="with_goal" />;
+    // return <p>asas</p>
+  };
+
   return (
     <>
       {messages.length === 0 && (
@@ -115,6 +204,57 @@ export default function ChatInterface({
           </div>
         </div>
       )}
+
+      {messages.map((msg, i) => (
+        <div key={i} className="flex justify-center">
+          <div
+            className={`max-w-[85%] space-y-3 flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
+          >
+            <div
+              className={`px-4 py-3 rounded-2xl text-sm leading-relaxed
+                  ${
+                    msg.role === "user"
+                      ? "bg-brand-500 text-white rounded-br-sm"
+                      : "bg-white border border-gray-100 text-gray-800 shadow-sm rounded-bl-sm"
+                  }`}
+            >
+              {msg.role === "assistant" ? (
+                <div className="prose prose-sm max-w-none">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              ) : (
+                msg.content
+              )}
+            </div>
+
+            {/* {msg.validation && (
+              <div className="w-full">
+                <ValidationBadge validation={msg.validation} />
+              </div>
+            )} */}
+
+            {msg.analysis && (
+              <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                  <Sparkles size={16} className="text-brand-500" />
+                  ผลการวิเคราะห์
+                </h3>
+
+                {renderAnalysis(
+                  msg.analysis as AnalysisResult & { user_id?: string },
+                )}
+              </div>
+            )}
+
+            <span className="text-xs text-gray-300 px-1">
+              {msg.timestamp.toLocaleTimeString("th-TH", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
+        </div>
+      ))}
 
       <div className="border-t border-border p-4 bg-card/50">
         <div className="max-w-3xl mx-auto flex flex-col gap-4">
