@@ -124,22 +124,22 @@ export function SkillGapList({ gaps }: { gaps: SkillGap[] }) {
 }
 
 // ─── Salary Card ──────────────────────────────────────────────────────────────
-export function SalaryCard({ salary }: { salary: SalaryRange }) {
-  return (
-    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <DollarSign size={18} className="text-green-600" />
-        <span className="font-semibold text-green-800">เงินเดือนโดยประมาณ</span>
-      </div>
-      <p className="text-2xl font-bold text-green-700">
-        {salary.min} – {salary.max}
-        <span className="text-sm font-normal text-green-600 ml-1">
-          {salary.currency}/{salary.period}
-        </span>
-      </p>
-    </div>
-  );
-}
+// export function SalaryCard({ salary }: { salary: SalaryRange }) {
+//   return (
+//     <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+//       <div className="flex items-center gap-2 mb-2">
+//         <DollarSign size={18} className="text-green-600" />
+//         <span className="font-semibold text-green-800">เงินเดือนโดยประมาณ</span>
+//       </div>
+//       <p className="text-2xl font-bold text-green-700">
+//         {salary.min} – {salary.max}
+//         <span className="text-sm font-normal text-green-600 ml-1">
+//           {salary.currency}/{salary.period}
+//         </span>
+//       </p>
+//     </div>
+//   );
+// }
 
 // ─── Roadmap Timeline ─────────────────────────────────────────────────────────
 export function RoadmapTimeline({ roadmap }: { roadmap: CareerRoadmap }) {
@@ -230,11 +230,11 @@ export function RoadmapTimeline({ roadmap }: { roadmap: CareerRoadmap }) {
       )} */}
 
       {/* Motivational message */}
-      {roadmap.motivational_message && (
+      {/* {roadmap.motivational_message && (
         <div className="bg-gradient-to-r from-brand-50 to-purple-50 border border-brand-100 rounded-xl p-4 text-sm text-brand-800 italic">
           💪 {roadmap.motivational_message}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

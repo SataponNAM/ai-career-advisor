@@ -28,49 +28,192 @@ const analysisExample: ChatMessage = {
   content:
     "Based on your resume, you have strong experience in software development but limited exposure to cloud technologies. I recommend focusing on learning AWS or Azure to enhance your career prospects in the cloud computing field.",
   timestamp: new Date(),
-  analysis: {
-    path_type: "has_goal",
-    current_profile: {
-      current_role: "Software Engineer",
-      years_experience: 5,
-      education: "Bachelor's in Computer Science",
+    analysis: {
+      path_type: "has_goal",
+      current_profile: {
+        current_role:
+          "Final-year Computer Science student / Full Stack Developer Intern",
+        years_experience: 0.6,
+        education:
+          "Bachelor of Science in Computer Science, King Mongkut’s University of Technology North Bangkok",
+        summary:
+          "คุณ Satapon เป็นนักศึกษาปีสุดท้ายที่มีพื้นฐานด้าน Full-stack Development ที่แข็งแกร่ง โดยมีประสบการณ์ฝึกงาน 7 เดือนที่ REPCO NEX ในการทำ Modernization ระบบเก่าให้เป็นเทคโนโลยีสมัยใหม่ (Next.js, Nest.js, PostgreSQL) มีทักษะครอบคลุมทั้ง Web, Mobile (Flutter), และ Data Science (Python/ML) พร้อมด้วย GPAX 3.51 ถือเป็น Candidate ที่มีศักยภาพสูงและพร้อมเริ่มงาน Full-time ครับ",
+      },
+      detected_skills: [],
+      recommended_careers: [
+        {
+          title: "Software Developer",
+          match_score: 0,
+        },
+      ],
+      skill_gaps: [
+        {
+          skill: "Python (AI/ML Integration)",
+          importance: "critical",
+          reason:
+            "Python is the industry standard for AI/ML and data-driven development. Mastering it is essential for modern backend and data engineering roles.",
+          demand_score: 9.8,
+        },
+        {
+          skill: "Cloud Computing (AWS/Azure)",
+          importance: "important",
+          reason:
+            "Enterprise systems are moving to cloud-native architectures; understanding deployment and scalability is a key differentiator.",
+          demand_score: 9.2,
+        },
+        {
+          skill: "SQL & Database Optimization",
+          importance: "important",
+          reason:
+            "Data-centric applications require deep knowledge of relational databases to ensure performance and reliability.",
+          demand_score: 8.9,
+        },
+        {
+          skill: "AI Literacy & Prompt Engineering",
+          importance: "important",
+          reason:
+            "Using AI tools to accelerate coding and documentation is becoming a baseline expectation for productivity.",
+          demand_score: 8.5,
+        },
+      ],
+      roadmap: {
+        target_role: "Software Developer (AI-Integrated/Cloud-Native)",
+        total_duration: "3 months",
+        milestones: [
+          {
+            week: "Week 1-3",
+            title: "Python Mastery & AI Literacy",
+            tasks: [
+              "Master Python advanced concepts (Decorators, Generators, AsyncIO)",
+              "Learn Prompt Engineering for code generation and debugging",
+              "Integrate OpenAI API or LangChain into a simple CLI project",
+            ],
+            resources: [
+              {
+                name: "Python for Data Science and AI (Coursera/FreeCodeCamp)",
+                url: "https://www.freecodecamp.org/",
+                type: "course",
+                cost: "free",
+              },
+            ],
+            success_metric:
+              "Build a functional AI-powered CLI tool that automates a daily task.",
+          },
+          {
+            week: "Week 4-7",
+            title: "SQL & Database Optimization",
+            tasks: [
+              "Deep dive into SQL indexing, query execution plans, and normalization",
+              "Learn NoSQL basics (MongoDB) for unstructured data",
+              "Practice complex joins and window functions for data analytics",
+            ],
+            resources: [
+              {
+                name: "SQL Tutorial (W3Schools/Mode Analytics)",
+                url: "https://mode.com/sql-tutorial/",
+                type: "course",
+                cost: "free",
+              },
+            ],
+            success_metric:
+              "Optimize a slow-running SQL query and demonstrate performance improvement.",
+          },
+          {
+            week: "Week 8-10",
+            title: "Cloud Computing (AWS/Azure)",
+            tasks: [
+              "Understand Cloud architecture (IaaS, PaaS, Serverless)",
+              "Deploy a Python application to AWS Lambda or Azure Functions",
+              "Learn basic CI/CD pipeline setup using GitHub Actions",
+            ],
+            resources: [
+              {
+                name: "AWS Cloud Practitioner Essentials",
+                url: "https://explore.skillbuilder.aws/",
+                type: "course",
+                cost: "free",
+              },
+            ],
+            success_metric:
+              "Successfully deploy a web service to the cloud with automated deployment.",
+          },
+          {
+            week: "Week 11-12",
+            title: "Architect-Thinker Integration",
+            tasks: [
+              "Study System Design patterns (Microservices, Event-driven)",
+              "Practice technical communication: Documenting architecture decisions",
+              "Build a capstone project combining Python, SQL, and Cloud",
+            ],
+            resources: [
+              {
+                name: "System Design Primer (GitHub)",
+                url: "https://github.com/donnemartin/system-design-primer",
+                type: "documentation",
+                cost: "free",
+              },
+            ],
+            success_metric:
+              "Present a technical project portfolio that explains the 'why' behind your architecture.",
+          },
+        ],
+        key_certifications: [
+          "AWS Certified Developer – Associate",
+          "Microsoft Certified: Azure Developer Associate",
+          "PCAP – Certified Associate in Python Programming",
+        ],
+        daily_commitment: "2-3 hours",
+        motivational_message:
+          "เส้นทางนี้อาจจะดูท้าทาย แต่ทุกบรรทัดที่คุณเขียนและทุกความรู้ที่คุณเก็บเกี่ยวในวันนี้ คือการลงทุนเพื่ออนาคตที่มั่นคงในฐานะ Architect-Thinker คุณทำได้แน่นอนครับ! สู้ๆ นะครับ!",
+      },
+      market_insights: [
+        "Tech recruiters in 2026 are shifting focus from 'code-only' developers to 'architect-thinkers' who can communicate technical value to product teams.",
+        "Soft skills like technical communication and systems thinking are now as critical as core programming languages.",
+        "The demand for SQL and Python continues to surge as businesses prioritize data-driven decision-making and AI integration.",
+        "AI literacy is no longer a 'nice-to-have'; it is a core competency for maintaining developer velocity.",
+      ],
+      salary_range: {
+        min: "60,000",
+        max: "180,000",
+        currency: "THB",
+        period: "month",
+      },
+      preferences_applied: {
+        exclude_work_type: [],
+        prefer_work_type: ["Full-time"],
+        exclude_industry: [],
+        prefer_industry: [],
+        location: "Bangkok/Pathum Thani",
+        exclude_company_size: [],
+        prefer_company_size: [],
+      },
+    },
+    validation: {
+      passed: false,
+      quality_score: 75,
       summary:
-        "Experienced software engineer with a focus on backend development and a passion for learning new technologies.",
+        "ข้อมูลไม่ผ่านเกณฑ์การตรวจสอบ เนื่องจากขาดฟิลด์ 'description' ในส่วนของ careers และข้อมูลในส่วนของ skills ว่างเปล่า ซึ่งขัดกับข้อกำหนดที่ระบุไว้",
+      warnings: [],
+      critical_issues: [
+        {
+          section: "careers",
+          severity: "critical",
+          field: "description",
+          issue:
+            "The 'careers' array objects are missing the 'description' field required by the validation schema.",
+          fix: "Add a 'description' field to each career object explaining the role.",
+        },
+        {
+          section: "skills",
+          severity: "critical",
+          field: "skills",
+          issue:
+            "The 'skills' array is empty, making it impossible to assess current proficiency levels.",
+          fix: "Populate the 'skills' array with at least one skill and a corresponding proficiency level.",
+        },
+      ],
+      retry_count: 1,
     },
-    detected_skills: [
-      { name: "Python", level: "advanced", category: "technical" },
-      { name: "Java", level: "advanced", category: "technical" },
-      { name: "SQL", level: "intermediate", category: "technical" },
-    ],
-    recommended_careers: [
-      { title: "Cloud Engineer", match_score: 0.9 },
-      { title: "DevOps Engineer", match_score: 0.85 },
-    ],
-    skill_gaps: [
-      {
-        skill: "AWS",
-        importance: "critical",
-        reason: "Highly recommended for cloud-related roles",
-      },
-      {
-        skill: "Azure",
-        importance: "important",
-        reason: "Valuable for cloud-related roles",
-      },
-    ],
-    roadmap: null,
-    market_insights: [
-      "Cloud computing is one of the fastest-growing sectors in tech.",
-      "AWS and Azure are the leading cloud platforms with high demand for skilled professionals.",
-    ],
-    salary_range: {
-      min: "80000",
-      max: "120000",
-      currency: "USD",
-      period: "year",
-    },
-    preferences_applied: { location: "Bangkok", remote: true },
-  },
 };
 
 export default function ChatInterface({
