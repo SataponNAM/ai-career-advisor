@@ -74,7 +74,7 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.3,
 )
 
-async def call_llm(system: str, prompt: str):
+async def call_llm(system: str, prompt: str, json_mode: bool = True):
     response = await llm.ainvoke([
         SystemMessage(content=system),
         HumanMessage(content=prompt),
@@ -88,9 +88,12 @@ async def call_llm(system: str, prompt: str):
             for block in content
         )
 
-    if not content or not content.strip():
+    if not content or not str(content).strip():
         print("[call_llm] ⚠️ LLM returned empty content")
-        return {}
+        return {} if json_mode else ""
+
+    if not json_mode:
+        return str(content).strip()
 
     # Strip markdown fences first (Gemini often wraps JSON in ```json ... ```)
     stripped = content.strip()
@@ -195,8 +198,15 @@ async def analyze_goal(state: CareerState) -> CareerState:
 async def analyze_skills(state: CareerState) -> CareerState:
     print(f"▶ Node 2: Skills check...")
     try:
+        tool = CareerSearchTool()
         profile = state.get("current_profile", {})
         prefs_json = json.dumps(state.get("preferences", {}), ensure_ascii=False)
+
+        ind = " ".join(state.get("preferences", {}).get("prefer_industry", []))
+        market_results = await search_cached(
+            tool, f"in-demand tech careers required skills Thailand {ind}".strip()
+        )
+        market_data_json = json.dumps(market_results, ensure_ascii=False)
 
         raw = await call_llm(
             system=SYSTEM_CAREER_ADVISOR,
@@ -207,9 +217,23 @@ async def analyze_skills(state: CareerState) -> CareerState:
                 resume_text=state.get("resume_text") or "No resume provided",
                 message=state.get("message", ""),
                 preferences=prefs_json,
+                market_data=market_data_json,
             ),
         )
         result: Node2aOutput = parse(Node2aOutput, raw)
+
+        years_exp = profile.get("years_experience", 0)
+        try:
+            years_exp_num = float(str(years_exp).replace("+", ""))
+        except (ValueError, TypeError):
+            years_exp_num = 0
+
+        if years_exp_num == 0 or str(years_exp).lower() in ("0", "unknown", "none", ""):
+            max_coverage = max(
+                (c.coverage_percent for c in result.career_skill_coverage), default=0
+            )
+            if max_coverage < 80:
+                result.skill_sufficient = False
 
         return {
             **state,
@@ -236,8 +260,8 @@ async def analyze_gaps(state: CareerState) -> CareerState:
                 current_role=profile.get("current_role", "Unknown"),
                 years_experience=profile.get("years_experience", "Unknown"),
                 education=profile.get("education", "Unknown"),
-                goal=state.get("career_goal", ""),
-                resume_text=state.get("resume_text") or "No resume provided",
+                career_goal=state.get("career_goal", ""),
+                resume=state.get("resume_text") or "No resume provided",
                 message=state.get("message", ""),
                 preferences=prefs_json,
             ),
@@ -297,6 +321,7 @@ async def node_recommend(state: CareerState) -> CareerState:
 # ─── Node MultiCareerGap: skill_sufficient = false ────────────────────────────
 #  แนะนำเส้นทางอาชีพที่เหมาะสมโดยพิจารณาจากทักษะที่มีอยู่ ไม่มีเป้าหมายอาชีพที่ชัดเจน และทักษะยังไม่เพียงพอ
 async def node_multi_career_gap(state: CareerState) -> CareerState:
+    print(f"▶ Node Multi-Career Gap Analysis")
     try:
         tool = CareerSearchTool()
 
@@ -308,7 +333,7 @@ async def node_multi_career_gap(state: CareerState) -> CareerState:
 
         detected_skills_json = json.dumps(state.get("detected_skills", []), ensure_ascii=False)
         career_coverage_json = json.dumps(state.get("career_skill_coverage", []), ensure_ascii=False)
-        market_data_json = json.dumps(market_data, ensure_ascii=False)[:2000]
+        market_data_json = json.dumps(market_data, ensure_ascii=False)
         pref_json = json.dumps(state.get("preferences", {}), ensure_ascii=False)
 
         raw = await call_llm(
@@ -336,6 +361,7 @@ async def node_multi_career_gap(state: CareerState) -> CareerState:
 # ─── Node 3: Market Agent (has_goal) ─────────────────────────────────────────
 # วิเคราะห์ตลาดงานสำหรับเป้าหมายอาชีพ
 async def market_agent(state: CareerState) -> CareerState:
+    print(f"▶ Node Market Agent")
     market_data = {}
     try:
         tool = CareerSearchTool()
@@ -407,6 +433,7 @@ async def market_agent(state: CareerState) -> CareerState:
 
 # ── Node 4: Roadmap Planner ───────────────────────────────────────────────────
 async def create_roadmap(state: CareerState) -> CareerState:
+    print(f"▶ Node Roadmap Planner")
     retry = state.get("validation_retry_count", 0)
 
     try:
@@ -470,6 +497,7 @@ async def create_roadmap(state: CareerState) -> CareerState:
 
 # ── Node 5: Validator ─────────────────────────────────────────────────────────
 async def validate(state: CareerState) -> CareerState:
+    print(f"▶ Node 5: Validation ")
 
     try:
         market_data = state.get("market_data") or {}
@@ -530,6 +558,7 @@ async def validate(state: CareerState) -> CareerState:
 
 # ── Final Response ────────────────────────────────────────────────────────────
 async def final_response(state: CareerState) -> CareerState:
+    print(f"▶ Node Final: Generate final response for user")
     path = state.get("path_type", "has_goal")
 
     try:
@@ -566,8 +595,8 @@ async def final_response(state: CareerState) -> CareerState:
             json_mode=False,
         )
         return {**state, "final_response": response}
-    except Exception:
-        print(f"[Final Response] fallback due to error: {state.get('error')}")
+    except Exception as e:
+        print(f"[Final Response] fallback due to error: {e}")
         return {**state, "final_response": "การวิเคราะห์เสร็จสิ้นแล้ว กรุณาดูผลลัพธ์ด้านล่าง"}
 
 # ── Routers ───────────────────────────────────────────────────────────────────
