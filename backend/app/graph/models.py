@@ -102,6 +102,7 @@ class CareerCoverage(BaseModel):
     coverage_percent: int = 0
     has_skills:       list[str] = []
     missing_skills:   list[str] = []
+    market_required_skills: list[str] = []
 
 class Node2aOutput(BaseModel):
     detected_skills:        list[Skill] = []
@@ -265,6 +266,7 @@ class Node5Output(BaseModel):
     issues:                list[ValidationIssue] = []
     auto_fixable:          bool = False
     fixes_applied:         FixesApplied = Field(default_factory=FixesApplied)
+    validation_summary:    str = ""
     validation_summary:    str = ""
 
 # ── parse() — 3-stage fallback ────────────────────────────────────────────────
