@@ -181,7 +181,7 @@ export interface SkillUpgradeResponse {
 
 export interface ChatMessage {
   role: "user" | "assistant";
-  content: string;
+  message: string;
   timestamp: Date;
   analysis?: AnalysisResult;
   validation?: ValidationInfo;
