@@ -282,11 +282,11 @@ export default function MultiCareerGapView({
       </div>
 
       {/* Overall advice */}
-      {overall_advice && (
+      {/* {overall_advice && (
         <div className="bg-white border border-gray-100 rounded-2xl p-4 text-sm text-gray-700 leading-relaxed">
           💬 {overall_advice}
         </div>
-      )}
+      )} */}
     </div>
   );
 }
