@@ -9,6 +9,7 @@ import {
   Zap,
 } from "lucide-react";
 import axios from "axios";
+import { Card } from "@radix-ui/themes";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -158,6 +159,7 @@ function SkillUpgradePanel({
 
   const fetchPlan = async () => {
     setLoading(true);
+
     try {
       const fd = new FormData();
       fd.append("selected_career", career.title);
@@ -223,11 +225,11 @@ function SkillUpgradePanel({
                 ))}
               </div>
 
-              <p className="text-xs text-gray-500">{career.why_worth_it}</p>
+              {/* <p className="text-xs text-gray-500">{career.why_worth_it}</p> */}
 
               <button
                 onClick={fetchPlan}
-                className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-brand-500 hover:bg-brand-600 rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
               >
                 <Zap size={16} />
                 ดูแผนพัฒนาแบบละเอียด
@@ -333,7 +335,7 @@ export default function ReadyCareersView({
   return (
     <div className="space-y-5">
       {/* Ready careers */}
-      <div>
+      <Card>
         <div className="flex items-center gap-2 mb-3">
           <CheckCircle size={16} className="text-green-500" />
           <h3 className="font-semibold text-gray-800 text-sm">
@@ -345,11 +347,11 @@ export default function ReadyCareersView({
             <ReadyCareerCard key={i} career={c} />
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Near reach careers */}
       {nearReachCareers?.length > 0 && (
-        <div>
+        <Card>
           <div className="flex items-center gap-2 mb-3">
             <ArrowRight size={16} className="text-brand-500" />
             <h3 className="font-semibold text-gray-800 text-sm">
@@ -361,7 +363,7 @@ export default function ReadyCareersView({
               <button
                 key={i}
                 onClick={() => setSelectedUpgrade(career)}
-                className="w-full bg-white border border-brand-100 rounded-2xl p-4 text-left hover:border-brand-300 hover:shadow-sm transition-all group"
+                className="w-full bg-white border border-gray-400 rounded-2xl p-4 text-left hover:border-brand-300 hover:shadow-sm transition-all group"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1">
@@ -411,7 +413,7 @@ export default function ReadyCareersView({
               </button>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Skill upgrade modal */}
