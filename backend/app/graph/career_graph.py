@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 import re
 import time
@@ -594,10 +595,12 @@ async def final_response(state: CareerState) -> CareerState:
             ),
             json_mode=False,
         )
-        return {**state, "final_response": response}
+                 
+        return {**state, "final_response": response, "timestamp": datetime.datetime.now()}
+
     except Exception as e:
         print(f"[Final Response] fallback due to error: {e}")
-        return {**state, "final_response": "การวิเคราะห์เสร็จสิ้นแล้ว กรุณาดูผลลัพธ์ด้านล่าง"}
+        return {**state, "final_response": "การวิเคราะห์เสร็จสิ้นแล้ว กรุณาดูผลลัพธ์ด้านล่าง", "timestamp": datetime.datetime.now()}
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 
