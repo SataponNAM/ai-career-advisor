@@ -32,10 +32,11 @@ export interface SalaryRange {
 // Roadmap
 
 export interface RoadmapMilestone {
-  week: string
+  month: number
   title: string
+  focus: string
   tasks: string[]
-  resources: Resource[]
+  deliverable: string
   success_metric?: string
 }
 
@@ -180,7 +181,7 @@ export interface SkillUpgradeResponse {
 // Chat
 
 export interface ChatMessage {
-  role: "user" | "assistant";
+  role?: "user" | "assistant";
   message: string;
   timestamp: Date;
   analysis?: AnalysisResult;

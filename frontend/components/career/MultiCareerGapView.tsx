@@ -107,6 +107,7 @@ function CareerCard({ career, rank }: { career: Career; rank: number }) {
           <p className="text-xs text-gray-500 mt-1 line-clamp-1">
             {career.description}
           </p>
+          
           {/* Coverage bar */}
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-gray-500 shrink-0">
@@ -251,9 +252,9 @@ export default function MultiCareerGapView({
   return (
     <div className="space-y-4">
       {/* Summary banner */}
-      <div className="bg-gradient-to-r from-brand-50 to-purple-50 border border-brand-100 rounded-2xl p-4">
+      <div className="bg-gradient-to-r from-brand-50 to-purple-50 border border-gray-400 rounded-2xl p-4">
         <p className="text-sm font-semibold text-brand-800 mb-1">
-          🎯 พบ {careers?.length || 0} อาชีพที่เหมาะสมกับ skill ของคุณ
+          🎯 {careers?.length || 0} อาชีพที่เหมาะสมกับ skill ของคุณ
         </p>
         <p className="text-xs text-gray-600">
           เรียงจากง่ายที่สุด → ยากที่สุด เลือกดูแต่ละอาชีพได้เลย

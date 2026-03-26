@@ -6,7 +6,7 @@ import {
   NoGoalInsufficientAnalysis,
   NoGoalSufficientAnalysis,
 } from "@/types";
-import { Button } from "@radix-ui/themes";
+import { Button, Card } from "@radix-ui/themes";
 import { Send, Sparkles } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
@@ -467,7 +467,7 @@ export default function ChatInterface({
     setMessages((prev) => [...prev, { ...msg, timestamp: new Date() }]);
 
   useEffect(() => {
-    setMessages([hasGoalExample]);
+    setMessages([noGoalSufficientExample]);
   }, []);
 
   const handleSubmit = async () => {
@@ -553,7 +553,7 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[#f6f9fb]">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 && (
@@ -587,7 +587,7 @@ export default function ChatInterface({
         {messages.map((msg, i) => (
           <div key={i} className="flex justify-center">
             <div
-              className={`max-w-[85%] space-y-3 flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} w-[90%] mt-5 mb-5`}
+              className={`max-w-[85%] space-y-3 flex flex-col items-start w-[90%] mt-5 mb-5`}
             >
               {/* <div
                 className={`px-4 py-3 rounded-2xl text-sm leading-relaxed
@@ -613,32 +613,38 @@ export default function ChatInterface({
               )} */}
 
               {msg.analysis && (
-                <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                  <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
-                    <Sparkles size={16} className="text-brand-500" />
-                    ผลการวิเคราะห์
-                  </h3>
+                // <Card className="w-full bg-white p-4">
+                <div className="w-full">
+                  <div className="mb-8 flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center bg-[#0071df]/10 rounded-lg bg-primary/10">
+                      <Sparkles className="h-4 w-4 text-[#0071df]" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      ผลการวิเคราะห์
+                    </h2>
+                  </div>
 
                   {renderAnalysis(
                     msg.analysis as AnalysisResult & { user_id?: string },
                   )}
                 </div>
+                // </Card>
               )}
 
-              <span className="text-xs text-gray-300 px-1">
+              {/* <span className="text-xs text-gray-300 px-1">
                 {msg.timestamp.toLocaleTimeString("th-TH", {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-              </span>
+              </span> */}
             </div>
           </div>
         ))}
       </div>
 
       {/* Input Section - Fixed at Bottom */}
-      <div className="m-4">
-        <div className="max-w-3xl mx-auto flex flex-col gap-4">
+      <div className="bg-white">
+        <div className="max-w-3xl mx-auto flex flex-col gap-4 m-4">
           {(showResumeDropzone || isDraggingOver || !!uploadedFile) && (
             <Dropzone
               onFileUpload={handleFileUpload}
