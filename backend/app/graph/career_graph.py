@@ -12,6 +12,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.core.config import get_settings
 from app.prompts.prompts import (
+    NODE_SKILL_UPGRADE,
     SYSTEM_CAREER_ADVISOR,
     NODE1_ANALYZE_GOAL,
     NODE2_ANALYZE_SKILLS,
@@ -358,6 +359,29 @@ async def node_multi_career_gap(state: CareerState) -> CareerState:
         }
     except Exception as e:
         return {**state, "error": str(e), "path_type": "no_goal_insufficient"}
+
+# ── NodeSkillUpgrade (on-demand) ──────────────────────────────────────────────
+
+async def node_skill_upgrade(state: CareerState) -> CareerState:
+    career = state.get("selected_career_for_upgrade", "")
+
+    try:
+        tool = CareerSearchTool()
+
+        results = await search_cached(tool, f"learn {career} skills courses resources 2024")
+        raw = await call_llm(
+            system=SYSTEM_CAREER_ADVISOR,
+            prompt=NODE_SKILL_UPGRADE.format(
+                detected_skills=json.dumps(state.get("detected_skills", []), ensure_ascii=False),
+                ready_careers=json.dumps(state.get("ready_careers", []), ensure_ascii=False),
+                selected_career=career,
+                market_data=json.dumps({"results": results}, ensure_ascii=False)[:2000],
+            ),
+        )
+
+        return {**state, "skill_upgrade_plan": raw}
+    except Exception as e:
+        return {**state, "error": str(e)}
 
 # ─── Node 3: Market Agent (has_goal) ─────────────────────────────────────────
 # วิเคราะห์ตลาดงานสำหรับเป้าหมายอาชีพ

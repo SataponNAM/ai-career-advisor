@@ -107,6 +107,46 @@ REQUIRED JSON FORMAT:
   "overall_advice": "คำแนะนำภาษาไทย"
 }}"""
 
+NODE_SKILL_UPGRADE = """You are a career development specialist.
+The user has sufficient skills for some careers but wants to know
+what to learn to unlock MORE career options.
+Current Skills: {detected_skills}
+Ready Careers: {ready_careers}
+Selected Career to Explore: {selected_career}
+Market Data: {market_data}
+Provide detailed skill upgrade plan for the selected career.
+Respond in JSON:
+{{
+    "target_career": "Data Engineer",
+    "current_coverage": 55,
+    "gap_analysis": [
+        {{
+            "skill": "Apache Spark",
+            "current_level": "none/beginner/intermediate",
+            "required_level": "intermediate",
+            "importance": "critical",
+            "reason": "ทำไมถึงต้องการ skill นี้",
+            "learn_time": "4-6 สัปดาห์",
+            "resources": [
+                {{"name": "Spark by Examples", "url": "https://sparkbyexamples.com", "type": "website", "cost": "free"}},
+                {{"name": "Udemy PySpark Course", "url": "https://udemy.com", "type": "course", "cost": "paid"}}
+            ]
+        }}
+    ],
+    "learning_roadmap": [
+        {{
+            "phase": "Phase 1 (สัปดาห์ 1-4)",
+            "focus": "SQL Advanced + Python Data Libraries",
+            "skills": ["SQL Advanced", "Pandas", "NumPy"],
+            "milestone": "สามารถทำ data manipulation ขั้นสูงได้"
+        }}
+    ],
+    "total_time": "3-4 เดือน",
+    "salary_increase": "จาก 60,000 → 100,000+ THB",
+    "motivation": "ข้อความให้กำลังใจเป็นภาษาไทย"
+}}
+"""
+
 NODE3_MARKET_ANALYSIS = """Analyze job market for target role. JSON only.
 Role:{target_role} Skills:{current_skills} Gaps:{skill_gaps}
 Exclude:{exclude_work_type} Prefer industry:{prefer_industry}

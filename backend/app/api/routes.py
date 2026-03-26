@@ -60,18 +60,18 @@ async def chat(
     return await service.chat(thread_id=thread_id, message=message)
 
 
-# @router.post("/skill-upgrade")
-# async def skill_upgrade(
-#     thread_id:          str = Form(...),
-#     selected_career:  str = Form(...),
-# ):
-#     result = await service.request_skill_upgrade(
-#         thread_id=thread_id,
-#         selected_career=selected_career,
-#     )
-#     if result.get("error"):
-#         raise HTTPException(500, result["error"])
-#     return result
+@router.post("/skill-upgrade")
+async def skill_upgrade(
+    thread_id: Optional[str] = Form(default=None),
+    selected_career:  str = Form(...),
+):
+    result = await service.request_skill_upgrade(
+        thread_id=thread_id,
+        selected_career=selected_career,
+    )
+    if result.get("error"):
+        raise HTTPException(500, result["error"])
+    return result
 
 
 @router.get("/health")
