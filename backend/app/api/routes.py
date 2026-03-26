@@ -6,9 +6,13 @@ from typing import Optional
 from app.core.career_service import CareerAdvisorService
 from app.tools.resume_parser import parse_resume
 from app.graph.career_graph import tavily_cache
+from app.graph.career_graph import sse_router
 
 router  = APIRouter(prefix="", tags=["career"])
 service = CareerAdvisorService() 
+
+# SSE endpoint for workflow progress (node_start/done)
+router.include_router(sse_router)
 
 @router.post("/analyze")
 async def analyze_career(
@@ -66,7 +70,6 @@ async def skill_upgrade(
     selected_career:  str = Form(...),
 ):
     result = await service.request_skill_upgrade(
-        thread_id=thread_id,
         selected_career=selected_career,
     )
     if result.get("error"):
