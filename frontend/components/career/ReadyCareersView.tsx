@@ -163,7 +163,9 @@ function SkillUpgradePanel({
     try {
       const fd = new FormData();
       fd.append("selected_career", career.title);
-      const { data } = await axios.post(`${API_URL}/api/v1/skill-upgrade`, fd);
+
+      const { data } = await axios.post(`${API_URL}/skill-upgrade`, fd);
+      
       setPlan(data.skill_upgrade_plan);
     } catch (e) {
       console.error(e);
@@ -174,7 +176,7 @@ function SkillUpgradePanel({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
+      <div className="bg-white rounded-3xl w-full max-w-xl max-h-[85vh] overflow-y-auto">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">แผนพัฒนา Skill</h3>
@@ -310,12 +312,12 @@ function SkillUpgradePanel({
                 <p className="text-xs font-semibold text-gray-700">
                   ⏱ เวลารวม: {plan.total_time}
                 </p>
-                <p className="text-xs text-green-700 mt-0.5">
+                {/* <p className="text-xs text-green-700 mt-0.5">
                   💰 {plan.salary_increase}
-                </p>
-                <p className="text-xs text-gray-600 mt-1 italic">
+                </p> */}
+                {/* <p className="text-xs text-gray-600 mt-1 italic">
                   {plan.motivation}
-                </p>
+                </p> */}
               </div>
             </div>
           )}
