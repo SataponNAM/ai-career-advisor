@@ -363,6 +363,7 @@ async def node_multi_career_gap(state: CareerState) -> CareerState:
 # ── NodeSkillUpgrade (on-demand) ──────────────────────────────────────────────
 
 async def node_skill_upgrade(state: CareerState) -> CareerState:
+    print(f"▶ Node Skill Upgrade for: {state.get('selected_career_for_upgrade')}")
     career = state.get("selected_career_for_upgrade", "")
 
     try:
@@ -697,6 +698,16 @@ def build_career_graph():
 
     return g.compile(checkpointer=_memory)
 
+def build_upgrade_graph():
+    g = StateGraph(CareerState)
+    g.add_node("skill_upgrade",  node_skill_upgrade)
+    g.add_node("final_response", final_response)
+    g.set_entry_point("skill_upgrade")
+    g.add_edge("skill_upgrade",  "final_response")
+    g.add_edge("final_response", END)
+    return g.compile(checkpointer=_memory)
+
 career_graph  = build_career_graph()
+upgrade_graph = build_upgrade_graph()
 
 print("Career graph module loaded")

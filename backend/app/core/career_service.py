@@ -1,4 +1,4 @@
-from app.graph.career_graph import career_graph, CareerState
+from app.graph.career_graph import career_graph, CareerState, upgrade_graph
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from app.prompts.prompts import SYSTEM_CAREER_ADVISOR
@@ -119,7 +119,7 @@ class CareerAdvisorService:
             "error":                       None,
         }
 
-        final_state = await career_graph.ainvoke(
+        final_state = await upgrade_graph.ainvoke(
             initial_state,
             config=config(f"{thread_id}_upgrade_{selected_career}"),
         )
