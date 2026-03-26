@@ -7,13 +7,14 @@ import {
   NoGoalSufficientAnalysis,
 } from "@/types";
 import { Button, Card } from "@radix-ui/themes";
-import { Send, Sparkles } from "lucide-react";
+import { Loader2, Send, Sparkles } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import Dropzone from "./Dropzone";
 import ReadyCareersView from "../career/ReadyCareersView";
 import MultiCareerGapView from "../career/MultiCareerGapView";
 import AnalysisPanel from "../roadmap/AnalysisPanel";
+import { analyzeCareer, sendChat } from "@/utils/api";
 
 interface ChatAreaProps {
   showResumeDropzone: boolean;
@@ -450,6 +451,7 @@ export default function ChatInterface({
   setUploadedFile,
   setShowResumeDropzone,
 }: ChatAreaProps) {
+
   const suggestionsMessages = [
     "Review my resume",
     "Career transition tips",
@@ -460,15 +462,26 @@ export default function ChatInterface({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [workflowStep, setWorkflowStep] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, []);
 
   const addMessage = (msg: Omit<ChatMessage, "timestamp">) =>
     setMessages((prev) => [...prev, { ...msg, timestamp: new Date() }]);
 
-  useEffect(() => {
-    setMessages([noGoalSufficientExample]);
-  }, []);
+  // useEffect(() => {
+  //   setMessages([noGoalSufficientExample]);
+  // }, []);
 
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
@@ -480,25 +493,70 @@ export default function ChatInterface({
 
     try {
       if (!hasAnalyzed) {
+        // Listen workflow progress from backend SSE while waiting for /analyze
+        setWorkflowStep("กำลังเริ่มรันขั้นตอน...");
+        const es = new EventSource(`${process.env.API_URL}/stream`);
+        eventSourceRef.current = es;
+
+        es.onmessage = (ev) => {
+          try {
+            const data = JSON.parse(ev.data);
+            if (data?.event === "node_start") {
+              setWorkflowStep(
+                data?.desc || data?.node || "กำลังรันขั้นตอน..."
+              );
+            } else if (data?.event === "done") {
+              setWorkflowStep(null);
+              es.close();
+              eventSourceRef.current = null;
+            }
+          } catch {
+            // Ignore malformed SSE payloads
+          }
+        };
+
+        es.onerror = () => {
+          setWorkflowStep(null);
+          es.close();
+          if (eventSourceRef.current === es) {
+            eventSourceRef.current = null;
+          }
+        };
+
         // Call analysis API
+        const result = await analyzeCareer(
+          userMessage,
+          uploadedFile || undefined,
+        );
         setHasAnalyzed(true);
         setUploadedFile(null);
-        // addMessage({
-        //   role: 'assistant',
-        //   content: result.message,
-        //   // inject user_id so child components can call skill-upgrade
-        //   analysis: result.analysis ? { ...result.analysis, user_id: userId } as any : undefined,
-        //   validation: result.validation,
-        // })
+        addMessage({
+          role: "assistant",
+          message: result.message,
+          analysis: result.analysis || undefined,
+          validation: result.validation,
+        });
       } else {
-        // Call chat API
+        const result = await sendChat(userMessage);
+        addMessage({ role: "assistant", message: result.message });
       }
     } catch (err) {
+      const e = err as {
+        response?: { data?: { detail?: string } };
+        message?: string;
+      };
       addMessage({
         role: "assistant",
-        message: `❌ เกิดข้อผิดพลาด: ${err.response?.data?.detail || err.message}`,
+        message: `❌ เกิดข้อผิดพลาด: ${e.response?.data?.detail || e.message || String(
+          err,
+        )}`,
       });
     } finally {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      setWorkflowStep(null);
       setIsLoading(false);
     }
   };
@@ -537,9 +595,22 @@ export default function ChatInterface({
         user_id?: string;
       };
 
+      const normalizedCareers = (analy.recommended_careers || []).map(
+        (career) => ({
+          ...career,
+          skill_gaps: (career.skill_gaps || []).map((gap) => ({
+            ...gap,
+            // `MultiCareerGapView` expects learn_time always be a string.
+            learn_time: gap.learn_time ?? "",
+            // Normalize `null` -> `undefined` to match `MultiCareerGapView` prop types.
+            free_resource: gap.free_resource ?? undefined,
+          })),
+        }),
+      );
+
       return (
         <MultiCareerGapView
-          careers={(analy.recommended_careers || []) as any}
+          careers={normalizedCareers}
           easiest_path={analy.easiest_path}
           highest_salary_path={analy.highest_salary_path}
           overall_advice={analy.overall_advice}
@@ -551,6 +622,8 @@ export default function ChatInterface({
     // has_goal path
     return <AnalysisPanel analysis={analysis} sessionType="with_goal" />;
   };
+
+
 
   return (
     <div className="flex flex-col h-full bg-[#f6f9fb]">
@@ -584,8 +657,16 @@ export default function ChatInterface({
           </div>
         )}
 
+        {workflowStep && !hasAnalyzed && isLoading && (
+          <div className="mx-auto w-[90%] mt-4 mb-2 bg-brand-50 border border-gray-400 rounded-2xl p-3 flex items-center gap-2 text-brand-700">
+            <Loader2 size={16} className="animate-spin" />
+            <span className="text-sm font-medium">กำลังรันขั้นตอน:</span>
+            <span className="text-sm">{workflowStep}</span>
+          </div>
+        )}
+
         {messages.map((msg, i) => (
-          <div key={i} className="flex justify-center">
+          <div key={i} className="flex justify-center w-full">
             <div
               className={`max-w-[85%] space-y-3 flex flex-col items-start w-[90%] mt-5 mb-5`}
             >

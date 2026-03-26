@@ -8,8 +8,8 @@ import {
   ArrowRight,
   Zap,
 } from "lucide-react";
-import axios from "axios";
 import { Card } from "@radix-ui/themes";
+import { requestSkillUpgrade } from "@/utils/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -161,12 +161,11 @@ function SkillUpgradePanel({
     setLoading(true);
 
     try {
-      const fd = new FormData();
-      fd.append("selected_career", career.title);
+      const result = (await requestSkillUpgrade(career.title)) as {
+        skill_upgrade_plan: SkillUpgradePlan | null;
+      };
 
-      const { data } = await axios.post(`${API_URL}/skill-upgrade`, fd);
-      
-      setPlan(data.skill_upgrade_plan);
+      setPlan(result.skill_upgrade_plan);
     } catch (e) {
       console.error(e);
     } finally {
