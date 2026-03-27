@@ -3,9 +3,8 @@ fastapi==0.135.1
 uvicorn[standard]
 python-multipart
 
-# LangGraph & LangChain — PostgreSQL checkpointer replaces Redis
+# LangGraph & LangChain 
 langgraph
-langchain-openai
 langchain-core
 langchain-google-genai
 
@@ -22,4 +21,3 @@ pydantic-settings
 python-dotenv
 httpx
 tenacity
-structlog

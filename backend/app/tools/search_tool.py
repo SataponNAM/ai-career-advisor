@@ -8,6 +8,8 @@ class CareerSearchTool:
     def __init__(self):
         self.client = TavilyClient(api_key=settings.tavily_api_key)
 
+    # This method performs an asynchronous search using the TavilyClient inbackground thread
+    # and processes the results to return a structured list of summaries and sources.
     async def search(self, query: str, max_results: int = 5) -> list[dict]:
         loop = asyncio.get_event_loop()
         results = await loop.run_in_executor(
@@ -20,8 +22,10 @@ class CareerSearchTool:
             ),
         )
         processed = []
+
         if results.get("answer"):
             processed.append({"type": "summary", "content": results["answer"]})
+
         for r in results.get("results", []):
             processed.append({
                 "type": "source",
@@ -29,6 +33,7 @@ class CareerSearchTool:
                 "url": r.get("url", ""),
                 "content": r.get("content", "")[:500],
             })
+
         return processed
 
     async def search_job_market(self, role: str, preferences: dict = None) -> dict:
