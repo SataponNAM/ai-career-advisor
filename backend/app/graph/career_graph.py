@@ -4,11 +4,12 @@ import json
 import re
 import time
 from typing import TypedDict, Optional
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
-
 
 from app.core.config import get_settings
 from app.prompts.prompts import (
@@ -163,11 +164,50 @@ class CareerState(TypedDict):
     final_response: Optional[str]
     error: Optional[str]
 
+# 
+sse_queues: dict[str, asyncio.Queue] = {}
+sse_router = APIRouter()
+
+async def emit_event(state: CareerState, event: str, node_id: str, desc: str = ""):
+    # This app currently runs with a single implicit stream queue.
+    # We keep the backend internal and do not require client `user_id`.
+    uid = "default"
+    q = sse_queues.get(uid)
+    if q:
+        await q.put({"event": event, "node": node_id, "desc": desc})
+
+@sse_router.get("/stream")
+async def stream():
+    user_id = "default"
+    q = asyncio.Queue()
+    sse_queues[user_id] = q
+
+    async def generator():
+        try:
+            while True:
+                data = await q.get()
+                yield f"data: {json.dumps(data)}\n\n"
+                if data.get("event") == "done":
+                    break
+        finally:
+            # Cleanup queue when client disconnects or "done" emitted
+            if sse_queues.get(user_id) is q:
+                del sse_queues[user_id]
+
+    return StreamingResponse(generator(), media_type="text/event-stream")
+
 # ─── Node 1 ───────────────────────────────────────────────────────────────────
 # Analyze career goal from user message and resume.
 
 async def analyze_goal(state: CareerState) -> CareerState:
   print(f"▶ Node1:Analyze goal...")
+  await emit_event(
+      state,
+      "node_start",
+      "node1_analyze",
+      "กำลังวิเคราะห์เป้าหมายอาชีพและข้อมูลจากเรซูเม่...",
+  )
+
   try:
       raw = await call_llm(
           system=SYSTEM_CAREER_ADVISOR,
@@ -199,6 +239,7 @@ async def analyze_goal(state: CareerState) -> CareerState:
 
 async def analyze_skills(state: CareerState) -> CareerState:
     print(f"▶ Node 2: Skills check...")
+    await emit_event(state, "node_start", "node2_skills", "กำลังวิเคราะห์ทักษะที่คุณมี...")
     try:
         tool = CareerSearchTool()
         profile = state.get("current_profile", {})
@@ -251,6 +292,7 @@ async def analyze_skills(state: CareerState) -> CareerState:
 
 async def analyze_gaps(state: CareerState) -> CareerState:
     print(f"[Node2b] Gap analysis for: {state.get('career_goal')}")
+    await emit_event(state, "node_start", "node2_gaps", "กำลังวิเคราะห์ช่องว่างทักษะสำหรับเป้าหมายอาชีพ...")
     try:
         profile = state.get("current_profile", {})
 
@@ -292,6 +334,7 @@ async def analyze_gaps(state: CareerState) -> CareerState:
 #  แนะนำเส้นทางอาชีพที่เหมาะสมโดยพิจารณาจากทักษะที่มีอยู่และความชอบของผู้ใช้ ไม่มีเป้าหมายอาชีพที่ชัดเจนทักษะเพียงพอ
 async def node_recommend(state: CareerState) -> CareerState:
     print(f"▶ Node Recommend Career")
+    await emit_event(state, "node_start", "recommend_full", "กำลังแนะนำเส้นทางอาชีพที่เหมาะสม...")
     try:
         detected_skills_json = json.dumps(state.get("detected_skills", []), ensure_ascii=False)
         career_coverage_json = json.dumps(state.get("career_skill_coverage", []), ensure_ascii=False, separators=(",", ":"))
@@ -324,6 +367,7 @@ async def node_recommend(state: CareerState) -> CareerState:
 #  แนะนำเส้นทางอาชีพที่เหมาะสมโดยพิจารณาจากทักษะที่มีอยู่ ไม่มีเป้าหมายอาชีพที่ชัดเจน และทักษะยังไม่เพียงพอ
 async def node_multi_career_gap(state: CareerState) -> CareerState:
     print(f"▶ Node Multi-Career Gap Analysis")
+    await emit_event(state, "node_start", "multi_career_gap", "กำลังวิเคราะห์เส้นทางอาชีพเมื่อยังไม่มีเป้าหมายชัดเจน...")
     try:
         tool = CareerSearchTool()
 
@@ -388,6 +432,7 @@ async def node_skill_upgrade(state: CareerState) -> CareerState:
 # วิเคราะห์ตลาดงานสำหรับเป้าหมายอาชีพ
 async def market_agent(state: CareerState) -> CareerState:
     print(f"▶ Node Market Agent")
+    await emit_event(state, "node_start", "node3_market", "กำลังวิเคราะห์ตลาดงานและความต้องการของอาชีพ...")
     market_data = {}
     try:
         tool = CareerSearchTool()
@@ -460,6 +505,7 @@ async def market_agent(state: CareerState) -> CareerState:
 # ── Node 4: Roadmap Planner ───────────────────────────────────────────────────
 async def create_roadmap(state: CareerState) -> CareerState:
     print(f"▶ Node Roadmap Planner")
+    await emit_event(state, "node_start", "node4_roadmap", "กำลังสร้าง Learning Roadmap (แผนพัฒนารายขั้น)...")
     retry = state.get("validation_retry_count", 0)
 
     try:
@@ -524,6 +570,7 @@ async def create_roadmap(state: CareerState) -> CareerState:
 # ── Node 5: Validator ─────────────────────────────────────────────────────────
 async def validate(state: CareerState) -> CareerState:
     print(f"▶ Node 5: Validation ")
+    await emit_event(state, "node_start", "node5_validate", "กำลังตรวจสอบคุณภาพและความถูกต้องของผลลัพธ์...")
 
     try:
         market_data = state.get("market_data") or {}
@@ -588,6 +635,7 @@ async def final_response(state: CareerState) -> CareerState:
     path = state.get("path_type", "has_goal")
 
     try:
+        await emit_event(state, "node_start", "final_response", "กำลังเรียบเรียงคำตอบสุดท้าย...")
         market_analysis = to_dict((state.get("market_data") or {}).get("analysis", {}))
 
         if path == "no_goal_sufficient": # มีทักษะเพียงพอแต่ไม่มีเป้าหมายชัดเจน
@@ -621,11 +669,19 @@ async def final_response(state: CareerState) -> CareerState:
             json_mode=False,
         )
                  
-        return {**state, "final_response": response, "timestamp": datetime.datetime.now()}
+        updated = {**state, "final_response": response, "timestamp": datetime.datetime.now()}
+        await emit_event(updated, "done", "final_response", "เสร็จสิ้น")
+        return updated
 
     except Exception as e:
         print(f"[Final Response] fallback due to error: {e}")
-        return {**state, "final_response": "การวิเคราะห์เสร็จสิ้นแล้ว กรุณาดูผลลัพธ์ด้านล่าง", "timestamp": datetime.datetime.now()}
+        updated = {
+            **state,
+            "final_response": "การวิเคราะห์เสร็จสิ้นแล้ว กรุณาดูผลลัพธ์ด้านล่าง",
+            "timestamp": datetime.datetime.now(),
+        }
+        await emit_event(updated, "done", "final_response", "เสร็จสิ้น")
+        return updated
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 

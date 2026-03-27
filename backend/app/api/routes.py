@@ -6,9 +6,11 @@ from typing import Optional
 from app.core.career_service import CareerAdvisorService
 from app.tools.resume_parser import parse_resume
 from app.graph.career_graph import tavily_cache
+from app.graph.career_graph import sse_router
 
 router  = APIRouter(prefix="", tags=["career"])
 service = CareerAdvisorService() 
+router.include_router(sse_router)
 
 @router.post("/analyze")
 async def analyze_career(
