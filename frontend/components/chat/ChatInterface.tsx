@@ -495,7 +495,7 @@ export default function ChatInterface({
       if (!hasAnalyzed) {
         // Listen workflow progress from backend SSE while waiting for /analyze
         setWorkflowStep("กำลังเริ่มรันขั้นตอน...");
-        const es = new EventSource(`${process.env.API_URL}/stream`);
+        const es = new EventSource(`${process.env.API_URL || "http://localhost:8000"}/stream`);
         eventSourceRef.current = es;
 
         es.onmessage = (ev) => {

@@ -150,14 +150,23 @@ function ReadyCareerCard({ career }: { career: ReadyCareer }) {
 function SkillUpgradePanel({
   career,
   onClose,
+  planCache,
+  setPlanCache,
 }: {
   career: NearReachCareer;
   onClose: () => void;
+  planCache: { [key: string]: SkillUpgradePlan };
+  setPlanCache: (cache: { [key: string]: SkillUpgradePlan }) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<SkillUpgradePlan | null>(null);
 
   const fetchPlan = async () => {
+    if (planCache[career.title]) {
+      setPlan(planCache[career.title]);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -165,7 +174,13 @@ function SkillUpgradePanel({
         skill_upgrade_plan: SkillUpgradePlan | null;
       };
 
-      setPlan(result.skill_upgrade_plan);
+      if (result.skill_upgrade_plan) {
+        setPlanCache((prev) => ({
+          ...prev,
+          [career.title]: result.skill_upgrade_plan!,
+        }));
+        setPlan(result.skill_upgrade_plan);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -175,7 +190,7 @@ function SkillUpgradePanel({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-xl max-h-[85vh] overflow-y-auto">
+      <div className="bg-white rounded-3xl w-full max-w-[900px] max-h-[85vh] overflow-y-auto">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">แผนพัฒนา Skill</h3>
@@ -332,6 +347,9 @@ export default function ReadyCareersView({
 }: Props) {
   const [selectedUpgrade, setSelectedUpgrade] =
     useState<NearReachCareer | null>(null);
+  const [planCache, setPlanCache] = useState<{
+    [key: string]: SkillUpgradePlan;
+  }>({});
 
   return (
     <div className="space-y-5">
@@ -422,6 +440,8 @@ export default function ReadyCareersView({
         <SkillUpgradePanel
           career={selectedUpgrade}
           onClose={() => setSelectedUpgrade(null)}
+          planCache={planCache}
+          setPlanCache={setPlanCache}
         />
       )}
     </div>
