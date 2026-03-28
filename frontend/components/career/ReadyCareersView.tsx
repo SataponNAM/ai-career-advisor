@@ -175,10 +175,10 @@ function SkillUpgradePanel({
       };
 
       if (result.skill_upgrade_plan) {
-        setPlanCache((prev) => ({
-          ...prev,
+        setPlanCache({
+          ...planCache,
           [career.title]: result.skill_upgrade_plan!,
-        }));
+        });
         setPlan(result.skill_upgrade_plan);
       }
     } catch (e) {
