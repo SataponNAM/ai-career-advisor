@@ -16,6 +16,7 @@ import {
   Map,
   ChevronDown,
   ChevronUp,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { Card } from "@radix-ui/themes";
 
@@ -69,7 +70,7 @@ export default function AnalysisPanel({
     <div className="space-y-3">
       {/* Profile Summary */}
       {analysis.current_profile && (
-        <Card>
+        <Card className="bg-white">
           <Section icon={<User size={16} />} title="โปรไฟล์ของคุณ">
             <div className="grid grid-cols-2 gap-3 text-sm">
               {analysis.current_profile.current_role && (
@@ -148,7 +149,7 @@ export default function AnalysisPanel({
       {analysis.market_insights?.length > 0 && (
         <Card>
           <Section
-            icon={<TrendingUp size={16} />}
+            icon={<BriefcaseBusiness size={16} />}
             title="ข้อมูลตลาดแรงงาน"
             defaultOpen={false}
           >

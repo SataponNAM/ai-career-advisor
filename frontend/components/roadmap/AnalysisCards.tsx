@@ -35,7 +35,7 @@ export function SkillTags({ skills }: { skills: SkillInfo[] }) {
       {skills.map((skill, i) => (
         <span
           key={i}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${levelColors[skill.level]}`}
+          className={`px-3 py-1 rounded-xl text-xs font-medium border ${levelColors[skill.level]}`}
         >
           {skill.name}
         </span>
@@ -106,7 +106,7 @@ export function SkillGapList({ gaps }: { gaps: SkillGap[] }) {
                 {gap.skill}
               </span>
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-medium border ${importanceColors[gap.importance]}`}
+                className={`px-2 py-0.5 rounded-xl text-xs font-medium border ${importanceColors[gap.importance]}`}
               >
                 {gap.importance === "critical"
                   ? "🔴 จำเป็นมาก"

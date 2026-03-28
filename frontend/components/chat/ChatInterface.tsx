@@ -7,7 +7,7 @@ import {
   NoGoalSufficientAnalysis,
 } from "@/types";
 import { Button, Card } from "@radix-ui/themes";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { Loader2, Plus, Sparkles } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import Dropzone from "./Dropzone";
@@ -228,7 +228,19 @@ const noGoalSufficientExample: ChatMessage = {
         category: "technical",
       },
     ],
-    ready_careers: [],
+    ready_careers: [
+      {
+        title: "Developer",
+        match_score: 70,
+        description: "string",
+        matched_skills: ["Python", "React"],
+        missing_minor: ["Missing", "Minor"],
+        salary_range: "40k-50k THB",
+        why_good_fit: "string",
+        typical_companies: ["ASO"],
+        time_to_ready: "1 year",
+      },
+    ],
     near_reach_careers: [
       {
         title: "Software Engineer (Generalist)",
@@ -451,11 +463,10 @@ export default function ChatInterface({
   setUploadedFile,
   setShowResumeDropzone,
 }: ChatAreaProps) {
-
   const suggestionsMessages = [
-    "Review my resume",
-    "Career transition tips",
-    "Learning Roadmap",
+    "🔎​ Resume Review",
+    "📝 Career Pivot Guide",
+    "🗺️ Skill Roadmap",
   ];
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -480,7 +491,7 @@ export default function ChatInterface({
     setMessages((prev) => [...prev, { ...msg, timestamp: new Date() }]);
 
   // useEffect(() => {
-  //   setMessages([noGoalSufficientExample]);
+  //   setMessages([hasGoalExample]);
   // }, []);
 
   const handleSubmit = async () => {
@@ -502,9 +513,7 @@ export default function ChatInterface({
           try {
             const data = JSON.parse(ev.data);
             if (data?.event === "node_start") {
-              setWorkflowStep(
-                data?.desc || data?.node || "กำลังรันขั้นตอน..."
-              );
+              setWorkflowStep(data?.desc || data?.node || "กำลังรันขั้นตอน...");
             } else if (data?.event === "done") {
               setWorkflowStep(null);
               es.close();
@@ -547,9 +556,9 @@ export default function ChatInterface({
       };
       addMessage({
         role: "assistant",
-        message: `❌ เกิดข้อผิดพลาด: ${e.response?.data?.detail || e.message || String(
-          err,
-        )}`,
+        message: `❌ เกิดข้อผิดพลาด: ${
+          e.response?.data?.detail || e.message || String(err)
+        }`,
       });
     } finally {
       if (eventSourceRef.current) {
@@ -582,6 +591,7 @@ export default function ChatInterface({
     if (analysis.path_type === "no_goal_sufficient") {
       const analy = analysis as NoGoalSufficientAnalysis & { user_id?: string };
 
+      // no_goal_sufficient
       return (
         <ReadyCareersView
           readyCareers={analy.ready_careers || []}
@@ -608,6 +618,7 @@ export default function ChatInterface({
         }),
       );
 
+      // no_goal_insufficient
       return (
         <MultiCareerGapView
           careers={normalizedCareers}
@@ -623,16 +634,14 @@ export default function ChatInterface({
     return <AnalysisPanel analysis={analysis} sessionType="with_goal" />;
   };
 
-
-
   return (
-    <div className="flex flex-col h-full bg-[#f6f9fb]">
+    <div className="flex flex-col h-full bg-[#eaeaea]">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center p-8 text-center h-full">
-            <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-              <Sparkles className="h-10 w-10 text-primary" />
+            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 bg-black">
+              <Sparkles className="h-8 w-8 text-primary text-white" />
             </div>
 
             <h2 className="text-2xl font-semibold text-foreground mb-3 font-mono tracking-tight text-balance">
@@ -648,7 +657,7 @@ export default function ChatInterface({
               {suggestionsMessages.map((suggestion) => (
                 <button
                   key={suggestion}
-                  className="px-4 py-2 rounded-full bg-secondary text-sm text-foreground hover:bg-secondary/80 transition-colors border border-border"
+                  className="px-4 py-2 rounded-xl bg-secondary text-sm font-semibold text-foreground hover:bg-secondary/80 transition-colors border bg-gray-100"
                 >
                   {suggestion}
                 </button>
@@ -697,8 +706,8 @@ export default function ChatInterface({
                 // <Card className="w-full bg-white p-4">
                 <div className="w-full">
                   <div className="mb-8 flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center bg-[#0071df]/10 rounded-lg bg-primary/10">
-                      <Sparkles className="h-4 w-4 text-[#0071df]" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-black">
+                      <Sparkles className="h-4 w-4 text-white" />
                     </div>
                     <h2 className="text-xl font-semibold text-foreground">
                       ผลการวิเคราะห์
@@ -734,30 +743,31 @@ export default function ChatInterface({
               isDraggingOver={isDraggingOver}
             />
           )}
-
-          <form onSubmit={handleSubmit} className="relative">
-            <div className="flex items-end gap-2 p-2 bg-secondary rounded-xl border border-border">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask about your career, skills, or job search..."
-                disabled={isLoading}
-                rows={1}
-                className="flex-1 resize-none bg-transparent border-0 focus:outline-none focus:ring-0 text-foreground placeholder:text-muted-foreground py-2.5 px-2 min-h-[44px] max-h-[200px]"
-              />
-              {/* <Button
-                type="submit"
-                size="3"
-                disabled={!input.trim() || isLoading}
-                className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <Send className="h-5 w-5" />
-                <span className="sr-only">Send message</span>
-              </Button> */}
-            </div>
-          </form>
+          {!hasAnalyzed && (
+            <form onSubmit={handleSubmit} className="relative">
+              <div className="flex items-end gap-2 p-2 bg-secondary rounded-xl border border-border">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask about your career, skills, or job search..."
+                  disabled={isLoading}
+                  rows={1}
+                  className="flex-1 resize-none bg-transparent border-0 focus:outline-none focus:ring-0 text-foreground placeholder:text-muted-foreground py-2.5 px-2 min-h-[44px] max-h-[200px]"
+                />
+                {/* <Button
+                  type="submit"
+                  size="3"
+                  disabled={!input.trim() || isLoading}
+                  className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <Send className="h-5 w-5" />
+                  <span className="sr-only">Send message</span>
+                </Button> */}
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>
