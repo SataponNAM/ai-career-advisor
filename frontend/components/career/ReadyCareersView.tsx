@@ -245,7 +245,7 @@ function SkillUpgradePanel({
 
               <button
                 onClick={fetchPlan}
-                className="w-full py-3 bg-brand-500 hover:bg-brand-600 rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                className="cursor-pointer w-full py-3 bg-brand-500 hover:bg-brand-600 rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
               >
                 <Zap size={16} />
                 ดูแผนพัฒนาแบบละเอียด
@@ -382,7 +382,7 @@ export default function ReadyCareersView({
               <button
                 key={i}
                 onClick={() => setSelectedUpgrade(career)}
-                className="w-full bg-white border border-gray-400 rounded-2xl p-4 text-left hover:border-brand-300 hover:shadow-sm transition-all group"
+                className="cursor-pointer w-full bg-white border border-gray-400 rounded-2xl p-4 text-left hover:border-brand-300 hover:shadow-sm transition-all group"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1">

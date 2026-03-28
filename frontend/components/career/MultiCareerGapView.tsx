@@ -262,12 +262,18 @@ export default function MultiCareerGapView({
         {(easiest_path || highest_salary_path) && (
           <div className="flex gap-3 mt-2 flex-wrap">
             {easiest_path && (
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+              <span
+                className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full"
+                title="คลิกเพื่อดูอาชีพนี้ในรายการ"
+              >
                 ⚡ เริ่มง่ายสุด: {easiest_path}
               </span>
             )}
             {highest_salary_path && (
-              <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
+              <span
+                className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full"
+                title="คลิกเพื่อดูอาชีพนี้ในรายการ"
+              >
                 💰 เงินเดือนสูงสุด: {highest_salary_path}
               </span>
             )}

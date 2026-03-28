@@ -6,15 +6,14 @@ import {
   NoGoalInsufficientAnalysis,
   NoGoalSufficientAnalysis,
 } from "@/types";
-import { Button, Card } from "@radix-ui/themes";
+import { Button } from "@radix-ui/themes";
 import { Loader2, Plus, Sparkles } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
 import Dropzone from "./Dropzone";
 import ReadyCareersView from "../career/ReadyCareersView";
 import MultiCareerGapView from "../career/MultiCareerGapView";
 import AnalysisPanel from "../roadmap/AnalysisPanel";
-import { analyzeCareer, sendChat } from "@/utils/api";
+import { analyzeCareer } from "@/utils/api";
 
 interface ChatAreaProps {
   showResumeDropzone: boolean;
@@ -476,6 +475,7 @@ export default function ChatInterface({
   const [workflowStep, setWorkflowStep] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -490,6 +490,19 @@ export default function ChatInterface({
   const addMessage = (msg: Omit<ChatMessage, "timestamp">) =>
     setMessages((prev) => [...prev, { ...msg, timestamp: new Date() }]);
 
+  const resetChatView = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+
+    setMessages([]);
+    setHasAnalyzed(false);
+    setWorkflowStep(null);
+    setUploadedFile(null);
+    setShowResumeDropzone(false);
+  }, [setShowResumeDropzone, setUploadedFile]);
+
   // useEffect(() => {
   //   setMessages([hasGoalExample]);
   // }, []);
@@ -498,57 +511,55 @@ export default function ChatInterface({
     if (!input.trim() || isLoading) return;
     const userMessage = input.trim();
 
+    if (hasAnalyzed) {
+      resetChatView();
+    }
+
     setInput("");
     setIsLoading(true);
-    addMessage({ role: "user", message: input });
+    addMessage({ role: "user", message: userMessage });
 
     try {
-      if (!hasAnalyzed) {
-        // Listen workflow progress from backend SSE while waiting for /analyze
-        setWorkflowStep("กำลังเริ่มรันขั้นตอน...");
-        const es = new EventSource(`${process.env.API_URL || "http://localhost:8000"}/stream`);
-        eventSourceRef.current = es;
+      // Listen workflow progress from backend SSE while waiting for /analyze
+      setWorkflowStep("กำลังเริ่มรันขั้นตอน...");
+      const es = new EventSource(
+        `${process.env.API_URL || "http://localhost:8000"}/stream`,
+      );
+      eventSourceRef.current = es;
 
-        es.onmessage = (ev) => {
-          try {
-            const data = JSON.parse(ev.data);
-            if (data?.event === "node_start") {
-              setWorkflowStep(data?.desc || data?.node || "กำลังรันขั้นตอน...");
-            } else if (data?.event === "done") {
-              setWorkflowStep(null);
-              es.close();
-              eventSourceRef.current = null;
-            }
-          } catch {
-            // Ignore malformed SSE payloads
-          }
-        };
-
-        es.onerror = () => {
-          setWorkflowStep(null);
-          es.close();
-          if (eventSourceRef.current === es) {
+      es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          if (data?.event === "node_start") {
+            setWorkflowStep(data?.desc || data?.node || "กำลังรันขั้นตอน...");
+          } else if (data?.event === "done") {
+            setWorkflowStep(null);
+            es.close();
             eventSourceRef.current = null;
           }
-        };
+        } catch {
+          // Ignore malformed SSE payloads
+        }
+      };
 
-        // Call analysis API
-        const result = await analyzeCareer(
-          userMessage,
-          uploadedFile || undefined,
-        );
-        setHasAnalyzed(true);
-        setUploadedFile(null);
-        addMessage({
-          role: "assistant",
-          message: result.message,
-          analysis: result.analysis || undefined,
-          validation: result.validation,
-        });
-      } else {
-        const result = await sendChat(userMessage);
-        addMessage({ role: "assistant", message: result.message });
-      }
+      es.onerror = () => {
+        setWorkflowStep(null);
+        es.close();
+        if (eventSourceRef.current === es) {
+          eventSourceRef.current = null;
+        }
+      };
+
+      // Call analysis API
+      const result = await analyzeCareer(userMessage, uploadedFile || undefined);
+      setHasAnalyzed(true);
+      setUploadedFile(null);
+      addMessage({
+        role: "assistant",
+        message: result.message,
+        analysis: result.analysis || undefined,
+        validation: result.validation,
+      });
     } catch (err) {
       const e = err as {
         response?: { data?: { detail?: string } };
@@ -580,12 +591,29 @@ export default function ChatInterface({
   const handleFileUpload = useCallback((file: File) => {
     setUploadedFile(file);
     setShowResumeDropzone(false);
-  }, []);
+  }, [setShowResumeDropzone, setUploadedFile]);
+
+  const handleUploadButtonClick = useCallback(() => {
+    setShowResumeDropzone(true);
+    fileInputRef.current?.click();
+  }, [setShowResumeDropzone]);
+
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+      // Allow re-selecting the same file.
+      e.currentTarget.value = "";
+    },
+    [handleFileUpload],
+  );
 
   const handleClearFile = useCallback(() => {
     setUploadedFile(null);
     setShowResumeDropzone(false);
-  }, []);
+  }, [setShowResumeDropzone, setUploadedFile]);
 
   const renderAnalysis = (analysis: AnalysisResult & { user_id?: string }) => {
     if (analysis.path_type === "no_goal_sufficient") {
@@ -743,31 +771,46 @@ export default function ChatInterface({
               isDraggingOver={isDraggingOver}
             />
           )}
-          {!hasAnalyzed && (
-            <form onSubmit={handleSubmit} className="relative">
-              <div className="flex items-end gap-2 p-2 bg-secondary rounded-xl border border-border">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask about your career, skills, or job search..."
-                  disabled={isLoading}
-                  rows={1}
-                  className="flex-1 resize-none bg-transparent border-0 focus:outline-none focus:ring-0 text-foreground placeholder:text-muted-foreground py-2.5 px-2 min-h-[44px] max-h-[200px]"
-                />
-                {/* <Button
-                  type="submit"
-                  size="3"
-                  disabled={!input.trim() || isLoading}
-                  className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  <Send className="h-5 w-5" />
-                  <span className="sr-only">Send message</span>
-                </Button> */}
+
+          <form onSubmit={handleSubmit} className="relative">
+            <div className="flex flex-col gap-2 p-2 bg-secondary rounded-xl border border-border">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask about your career, skills, or job search..."
+                disabled={isLoading}
+                rows={1}
+                className="flex-1 resize-none bg-transparent border-0 focus:outline-none focus:ring-0 text-foreground placeholder:text-muted-foreground py-2.5 px-2 min-h-[44px] max-h-[200px]"
+              />
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                onChange={handleFileInputChange}
+                className="hidden"
+              />
+
+              <div className="flex w-full">
+                <div className="flex flex-1 items-center ml-2">
+                  <Button
+                    size="3"
+                    className="h-10 w-10 shrink-0 bg-black hover:bg-black/90"
+                    variant="ghost"
+                    type="button"
+                    onClick={handleUploadButtonClick}
+                    title="Upload file"
+                    aria-label="Upload file"
+                  >
+                    <Plus className="h-5 w-5 text-gray-500" />
+                    <span className="sr-only">Upload File</span>
+                  </Button>
+                </div>
               </div>
-            </form>
-          )}
+            </div>
+          </form>
         </div>
       </div>
     </div>
