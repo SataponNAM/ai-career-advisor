@@ -21,14 +21,14 @@ Tasks:1. Extract all skills with level+category from resume/message
    - fresh grad with no work experience: cap max coverage at 70% unless resume proves otherwise
 4. skill_sufficient=true ONLY if ANY career coverage ≥80%
    - If years_experience=0 or current_role=student/fresh grad → apply strict mode
-Respond JSON:{{"detected_skills": [{{"name":"Python","level":"intermediate","category":"technical"}}],"skill_sufficient": true/false,"skill_coverage_summary": "brief summary in Thai","career_skill_coverage": [{{"career":"Backend Developer","coverage_percent":80,"has_skills":["Python"],"missing_skills":["Docker"], "market_required_skills":["Python","SQL","Docker","Redis","Git"]}}]}}"""
+Respond JSON:{{"detected_skills": [{{"name":"Python","level":beginner/intermediate/advanced,"category":"technical"}}],"skill_sufficient": true/false,"skill_coverage_summary": "brief summary in Thai","career_skill_coverage": [{{"career":"Backend Developer","coverage_percent":80,"has_skills":["Python"],"missing_skills":["Docker"], "market_required_skills":["Python","SQL","Docker","Redis","Git"]}}]}}"""
 
 NODE2_ANALYZE_SKILLS_WITH_GOAL = """Gap analysis for target role. JSON only.
 Role:{current_role} Exp:{years_experience}yr Edu:{education}, goal={goal}
 resume_text: {resume_text}
 Message: {message}
 Market data: {market_data}
-Respond JSON:{{"detected_skills": [{{"name":"Python","level":"intermediate","category":"technical"}}],"skill_gaps": [{{"skill":"Spark","importance": critical/important/nice-to-have,"reason":"why needed"}}],"gap_summary": "brief summary in Thai"}}"""
+Respond JSON:{{"detected_skills": [{{"name":"Python","level":beginner/intermediate/advanced,"category":"technical"}}],"skill_gaps": [{{"skill":"Spark","importance": critical/important/nice-to-have,"reason":"why needed"}}],"gap_summary": "brief summary in Thai"}}"""
 
 NODE_RECOMMEND = """List viable careers. JSON only.
 Skills: {detected_skills}
