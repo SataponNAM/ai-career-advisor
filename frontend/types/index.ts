@@ -32,12 +32,13 @@ export interface SalaryRange {
 // Roadmap
 
 export interface RoadmapMilestone {
-  month: number
+  week: string
   title: string
   focus: string
   tasks: string[]
   deliverable: string
   success_metric?: string
+  resources?: Resource[]
 }
 
 export interface CareerRoadmap {

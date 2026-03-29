@@ -186,7 +186,7 @@ export function RoadmapTimeline({ roadmap }: { roadmap: CareerRoadmap }) {
                     </li>
                   ))}
                 </ul>
-                {milestone.resources?.length > 0 && (
+                {milestone.resources && milestone.resources.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {milestone.resources.slice(0, 3).map((r, k) => (
                       <a
