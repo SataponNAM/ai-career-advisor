@@ -10,6 +10,7 @@ from app.graph.career_graph import sse_router
 
 router  = APIRouter(prefix="", tags=["career"])
 service = CareerAdvisorService() 
+router.include_router(sse_router)
 
 # SSE endpoint for workflow progress (node_start/done)
 router.include_router(sse_router)

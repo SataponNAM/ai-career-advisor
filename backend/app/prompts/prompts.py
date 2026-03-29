@@ -34,8 +34,7 @@ NODE_RECOMMEND = """List viable careers. JSON only.
 Skills: {detected_skills}
 Coverage: {career_skill_coverage}
 Preferences: {preferences}
-Respond JSON:
-{{
+Respond JSON:{{
   "ready_careers": [{{
     "title": "Backend Dev",
     "match_score": 88,
@@ -58,7 +57,7 @@ Respond JSON:
   "skill_gaps": [{{
     "skill": "Docker",
     "importance": "important",
-    "reason": "Thai — ทำไมต้องเรียน",
+    "reason": "ทำไมต้องเรียน",
     "learn_time": "2-3 สัปดาห์",
     "free_resource": "Play with Docker"
   }}],
@@ -76,8 +75,7 @@ OUTPUT RULES:
 - Minimum 4 careers, sorted easiest → hardest
 - All description/reason/why fields must be in Thai
 - salary in THB/month
-REQUIRED JSON FORMAT:
-{{
+Respond in JSON:{{
   "recommended_careers": [
     {{
       "title": "Junior Data Analyst",
@@ -116,8 +114,7 @@ Selected Career to Explore: {selected_career}
 Market Data: {market_data}
 Provide detailed skill upgrade plan for the selected career.
 Respond in JSON:
-{{
-    "target_career": "Data Engineer",
+{{"target_career": "Data Engineer",
     "current_coverage": 55,
     "gap_analysis": [
         {{
@@ -144,8 +141,7 @@ Respond in JSON:
     "total_time": "3-4 เดือน",
     "salary_increase": "จาก 60,000 → 100,000+ THB",
     "motivation": "ข้อความให้กำลังใจเป็นภาษาไทย"
-}}
-"""
+}}"""
 
 NODE3_MARKET_ANALYSIS = """Analyze job market for target role. JSON only.
 Role:{target_role} Skills:{current_skills} Gaps:{skill_gaps}
@@ -166,10 +162,10 @@ Gaps:{skill_gaps}
 Roadmap:{roadmap}
 Insights:{market_insights}
 Prefs:{preferences}
-Check: skills have valid levels, careers have title+description+score,gaps have importance+reason, roadmap has ≥2 milestones with real tasks (no placeholders),all resource URLs start with https.
+Check: skills have valid levels, careers have title+description+score,gaps have importance+reason,roadmap has ≥2 milestones with real tasks (no placeholders) for have goal path,all resource URLs start with https.
 Respond JSON: {{"is_valid":bool,"overall_quality_score":0-100,"issues":[{{"section":"roadmap","severity":"critical","field":"tasks","issue":"str","fix":"str"}}],"auto_fixable":bool,"fixes_applied":{{"skills":null,"careers":null,"skill_gaps":null,"roadmap":null}},"validation_summary":"Thai"}}"""
 
-FINAL_RESPONSE_TEMPLATE = """ Write a warm, encouraging response in Thai (3-4 paragraphs).
+FINAL_RESPONSE_TEMPLATE = """Write a warm, encouraging response in Thai (3-4 paragraphs).
 User: {message}
 Path: {path_type}
 Data: {analysis_summary}
@@ -180,22 +176,22 @@ End with motivating sentence."""
 
 # ── JD Score 
 
-JD_EXTRACT_PROMPT = """Extract JD requirements. JSON only.
-JD:{jd_text}
-{{"job_title":"str","company":str|null,"required_skills":[{{"skill":"Python","level":"advanced","is_mandatory":true}}],"required_experience_years":num|null,"required_education":str|null,"responsibilities":[],"nice_to_have":[],"keywords":[],"seniority_level":"junior|mid|senior|lead","tech_stack":[]}}"""
+# JD_EXTRACT_PROMPT = """Extract JD requirements. JSON only.
+# JD:{jd_text}
+# {{"job_title":"str","company":str|null,"required_skills":[{{"skill":"Python","level":"advanced","is_mandatory":true}}],"required_experience_years":num|null,"required_education":str|null,"responsibilities":[],"nice_to_have":[],"keywords":[],"seniority_level":"junior|mid|senior|lead","tech_stack":[]}}"""
 
-resume_text_SCORE_PROMPT = """Score resume_text vs JD. JSON only.
-JD: {job_title} ({seniority_level})
-Skills:{required_skills} Exp:{required_experience_years}yr Edu:{required_education}
-Resp:{responsibilities} Keywords:{keywords}
-resume_text:{resume_text_text}
-Candidate skills:{current_skills}
-Scoring: skills(40)+responsibilities(20)+experience(15)+keywords(15)+education(10)
-{{"overall_score":0-100,"ats_score":0-100,"breakdown":{{"skills_score":0-40,"experience_score":0-15,"education_score":0-10,"keywords_score":0-15,"responsibilities_score":0-20}},"matched_skills":[],"missing_skills":[{{"skill":"Kafka","is_mandatory":true,"importance":critical/important/nice-to-have}}],"matched_keywords":[],"missing_keywords":[],"experience_gap":"str","education_match":bool,"verdict":"strong_match|good_match|partial_match|weak_match","verdict_reason":"Thai"}}"""
+# resume_text_SCORE_PROMPT = """Score resume_text vs JD. JSON only.
+# JD: {job_title} ({seniority_level})
+# Skills:{required_skills} Exp:{required_experience_years}yr Edu:{required_education}
+# Resp:{responsibilities} Keywords:{keywords}
+# resume_text:{resume_text_text}
+# Candidate skills:{current_skills}
+# Scoring: skills(40)+responsibilities(20)+experience(15)+keywords(15)+education(10)
+# {{"overall_score":0-100,"ats_score":0-100,"breakdown":{{"skills_score":0-40,"experience_score":0-15,"education_score":0-10,"keywords_score":0-15,"responsibilities_score":0-20}},"matched_skills":[],"missing_skills":[{{"skill":"Kafka","is_mandatory":true,"importance":critical/important/nice-to-have}}],"matched_keywords":[],"missing_keywords":[],"experience_gap":"str","education_match":bool,"verdict":"strong_match|good_match|partial_match|weak_match","verdict_reason":"Thai"}}"""
 
-resume_text_IMPROVEMENT_PROMPT = """resume_text improvement advice. JSON only.
-Job:{job_title} Score:{overall_score}/100
-Missing skills:{missing_skills} Missing keywords:{missing_keywords}
-Exp gap:{experience_gap}
-resume_text:{resume_text_text}
-{{"priority_fixes":[{{"section":"skills","priority":"critical","issue":"Thai","suggestion":"Thai","before_example":"str","after_example":"str"}}],"keywords_to_add":[{{"keyword":"Kafka","add_to_section":"skills","context":"str"}}],"summary_rewrite":"Thai","quick_wins":[],"long_term_gaps":[],"estimated_improvement":"Thai","overall_advice":"Thai"}}"""
+# resume_text_IMPROVEMENT_PROMPT = """resume_text improvement advice. JSON only.
+# Job:{job_title} Score:{overall_score}/100
+# Missing skills:{missing_skills} Missing keywords:{missing_keywords}
+# Exp gap:{experience_gap}
+# resume_text:{resume_text_text}
+# {{"priority_fixes":[{{"section":"skills","priority":"critical","issue":"Thai","suggestion":"Thai","before_example":"str","after_example":"str"}}],"keywords_to_add":[{{"keyword":"Kafka","add_to_section":"skills","context":"str"}}],"summary_rewrite":"Thai","quick_wins":[],"long_term_gaps":[],"estimated_improvement":"Thai","overall_advice":"Thai"}}"""

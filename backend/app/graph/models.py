@@ -309,7 +309,7 @@ def repair(model: type[BaseModel], raw: dict) -> dict:
     return repaired
 
 def parse(model: type[BaseModel], raw: str | dict) -> BaseModel:
-    # ── Normalise input ───────────────────────────────────────────────────────
+    # ข้อมูลเป็น string
     if isinstance(raw, str):
         try:
             raw = json.loads(raw)
@@ -323,22 +323,26 @@ def parse(model: type[BaseModel], raw: str | dict) -> BaseModel:
             else:
                 return model()
 
+    # ข้อมูลไม่ใช่ dict หลังจากพยายามแปลงแล้ว ให้คืนค่า default model
     if not isinstance(raw, dict):
         return model()
 
     # ── Stage 1 ───────────────────────────────────────────────────────────────
+    # ลองแปลงข้อมูลดิบเป็นโมเดลโดยตรงก่อน
     try:
         return model.model_validate(raw)
     except ValidationError:
         pass
 
     # ── Stage 2: repair ───────────────────────────────────────────────────────
+    # ถ้าแปลงไม่สำเร็จ ซ่อมแซมข้อมูลดิบ (เช่น แปลงค่าที่ควรเป็น list แต่เป็น string มาเป็น list) แล้วค่อยแปลงอีกครั้ง
     try:
         return model.model_validate(repair(model, raw))
     except ValidationError:
         pass
 
     # ── Stage 3: field-by-field salvage ──────────────────────────────────────
+    # ถ้ายังแปลงไม่สำเร็จอีก ให้แปลงทีละฟิลด์ เพื่อเก็บข้อมูลที่ถูกต้องที่สุดเท่าที่จะทำได้
     salvaged_data = {}
     for field_name in model.model_fields:
         if field_name not in raw:

@@ -2,11 +2,21 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: ai-carrer-advisor-backend
+      dockerfile: Dockerfile
+    container_name: ai-career-advisor-backend
     ports:
-      - "8080:8080"
+      - "8000:8000"
     env_file:
       - ./backend/.env
-    volumes:
-      - ./backend:/app
-      
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai-career-advisor-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
