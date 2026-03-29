@@ -68,10 +68,10 @@ class Resource(BaseModel):
     type: str = "course"
     cost: Literal["free", "paid"] = "free"
 
-    @field_validator("url")
+    @field_validator("url", mode="before")
     @classmethod
     def url_must_start_https(cls, v):
-        if v and not v.startswith("https"):
+        if v and isinstance(v, str) and not v.startswith("https"):
             return ""
         return v
 
@@ -210,18 +210,18 @@ class MultiGapOutput(BaseModel):
 # Node 4 output model
 
 class Milestone(BaseModel):
-    week:           str
-    title:          str
-    tasks:          list[str] = []
-    resources:      list[Resource] = []
+    week: str
+    title: str
+    tasks: list[str] = []
+    resources: list[Resource] = []
     success_metric: str = ""
 
 class Node4Output(BaseModel):
-    target_role:          str = ""
-    total_duration:       str = ""
-    milestones:           list[Milestone] = []
-    key_certifications:   list[str] = []
-    daily_commitment:     str = ""
+    target_role: str = ""
+    total_duration: str = ""
+    milestones: list[Milestone] = []
+    key_certifications: list[str] = []
+    daily_commitment: str = ""
     motivational_message: str = ""
 
     @field_validator("milestones")
