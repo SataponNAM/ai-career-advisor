@@ -162,7 +162,7 @@ Gaps:{skill_gaps}
 Roadmap:{roadmap}
 Insights:{market_insights}
 Prefs:{preferences}
-Check: skills have valid levels, careers have title+description+score,gaps have importance+reason, roadmap has ≥2 milestones with real tasks (no placeholders),all resource URLs start with https.
+Check: skills have valid levels, careers have title+description+score,gaps have importance+reason,roadmap has ≥2 milestones with real tasks (no placeholders) for have goal path,all resource URLs start with https.
 Respond JSON: {{"is_valid":bool,"overall_quality_score":0-100,"issues":[{{"section":"roadmap","severity":"critical","field":"tasks","issue":"str","fix":"str"}}],"auto_fixable":bool,"fixes_applied":{{"skills":null,"careers":null,"skill_gaps":null,"roadmap":null}},"validation_summary":"Thai"}}"""
 
 FINAL_RESPONSE_TEMPLATE = """Write a warm, encouraging response in Thai (3-4 paragraphs).
