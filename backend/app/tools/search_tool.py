@@ -44,7 +44,7 @@ class CareerSearchTool:
         exclude = " -startup" if "startup" in exclude_work_type else ""
 
         queries = [
-            f"{role} required skills 2024 2025",
+            f"{role} required skills 2025 2026",
             f"{role} salary{industry}{exclude}",
             f"best courses learn {role} free",
             f"{role} job demand{industry}",
