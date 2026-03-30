@@ -87,9 +87,9 @@ class CareerAdvisorService:
         response = await chat_llm.ainvoke(messages)
         return {"thread_id": thread_id, "message": response.content}
     
-    async def request_skill_upgrade(self, thread_id: str, selected_career: str) -> dict:
+    async def request_skill_upgrade(self, selected_career: str) -> dict:
         """User เลือกอาชีพจาก near_reach_careers → upgrade plan"""
-        snapshot = career_graph.get_state(config(thread_id))
+        snapshot = career_graph.get_state(config(THREAD_ID))
         existing = snapshot.values if snapshot else {}
 
         initial_state: CareerState = {
@@ -121,7 +121,7 @@ class CareerAdvisorService:
 
         final_state = await upgrade_graph.ainvoke(
             initial_state,
-            config=config(f"{thread_id}_upgrade_{selected_career}"),
+            config=config(f"{THREAD_ID}_upgrade_{selected_career}"),
         )
         return {
             "selected_career":    selected_career,

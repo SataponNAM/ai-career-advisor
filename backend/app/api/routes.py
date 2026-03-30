@@ -67,7 +67,6 @@ async def chat(
 
 @router.post("/skill-upgrade")
 async def skill_upgrade(
-    thread_id: Optional[str] = Form(default=None),
     selected_career:  str = Form(...),
 ):
     result = await service.request_skill_upgrade(
