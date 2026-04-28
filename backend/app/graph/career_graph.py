@@ -305,8 +305,9 @@ async def analyze_gaps(state: CareerState) -> CareerState:
                 years_experience=profile.get("years_experience", "Unknown"),
                 education=profile.get("education", "Unknown"),
                 career_goal=state.get("career_goal", ""),
-                resume=state.get("resume_text") or "No resume provided",
+                resume_text=state.get("resume_text") or "No resume provided",
                 message=state.get("message", ""),
+                market_data=json.dumps((state.get("market_data") or {}).get("raw", {}), ensure_ascii=False),
                 preferences=prefs_json,
             ),
         )

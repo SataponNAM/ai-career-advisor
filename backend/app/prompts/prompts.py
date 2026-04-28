@@ -24,7 +24,7 @@ Tasks:1. Extract all skills with level+category from resume/message
 Respond JSON:{{"detected_skills": [{{"name":"Python","level":beginner/intermediate/advanced,"category":"technical"}}],"skill_sufficient": true/false,"skill_coverage_summary": "brief summary in Thai","career_skill_coverage": [{{"career":"Backend Developer","coverage_percent":80,"has_skills":["Python"],"missing_skills":["Docker"], "market_required_skills":["Python","SQL","Docker","Redis","Git"]}}]}}"""
 
 NODE2_ANALYZE_SKILLS_WITH_GOAL = """Gap analysis for target role. JSON only.
-Role:{current_role} Exp:{years_experience}yr Edu:{education}, goal={goal}
+Role:{current_role} Exp:{years_experience}yr Edu:{education}, goal={career_goal}
 resume_text: {resume_text}
 Message: {message}
 Market data: {market_data}
