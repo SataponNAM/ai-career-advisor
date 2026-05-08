@@ -1,4 +1,4 @@
-# AI Career Advosir
+# AI Career Advisor
 
 AI Career Advisor is an intelligent platform designed to help users navigate their professional journeys using the power of Agentic AI. Unlike traditional chatbots, this system leverages a multi-agent workflow to analyze skills, evaluate market trends, and provide actionable career roadmaps.s
 
