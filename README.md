@@ -1,18 +1,9 @@
+# AI Career Advosir
 
-# Run backend
+AI Career Advisor is an intelligent platform designed to help users navigate their professional journeys using the power of Agentic AI. Unlike traditional chatbots, this system leverages a multi-agent workflow to analyze skills, evaluate market trends, and provide actionable career roadmaps.s
 
-cd backend
+## 🌟 Key Features
 
-uvicorn app.main:app --reload 
-
-go to http://127.0.0.1:8000/docs for swagger
-
-# Run frontend
-
-cd frontend
-
-npm i
-
-npm run dev
-
-go to http://localhost:5173/ for frontend
+**Personalized Career Roadmaps:** Generates step-by-step guides to help users reach their target roles based on their current skill.    
+**Skill Gap Analysis:** Identifies missing competencies and suggests specific learning resources or certifications.    
+**Market Insight Integration:** Analyzes industry trends to ensure advice is relevant to the current job market.
